@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Focus & Goal Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Confetti library -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    /* MODAL POPUP STYLES FOR STOP WARNING */
+    .warning-modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(21, 28, 24, 0.6);
+      backdrop-filter: blur(6px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .warning-modal.active { display: flex; }
+    .warning-content {
+      background: var(--card);
+      color: var(--text);
+      padding: 28px;
+      border-radius: 28px;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+      border: 1px solid var(--border);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15);
+    }
+    .warning-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    /* INDEPENDENT FULLSCREEN DISPLAY ENHANCEMENTS */
+    .fullscreen-target:fullscreen {
+      width: 100vw !important;
+      height: 100vh !important;
+      max-width: none !important;
+      border-radius: 0 !important;
+      border: none !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      background: var(--card) !important;
+    }
+    .fullscreen-target:fullscreen .clock-display {
+      font-size: 8rem !important;
+    }
+    .fullscreen-target:fullscreen .flip-clock-container {
+      font-size: 6rem !important;
+      gap: 24px !important;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVIGATION BAR -->
+  <nav class="navbar">
+    <div class="nav-links">
+      <button class="nav-item active" data-page="home">🏠 Home</button>
+      <button class="nav-item" data-page="goals">🎯 Goals</button>
+      <button class="nav-item" data-page="timer">⏱️ Focus</button>
+      <button class="nav-item" data-page="stats">📊 Stats</button>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div class="streak-badge" style="padding: 6px 14px; font-size: 0.85rem;">🪙 <span id="userPointsDisplay">0</span> Pts</div>
+      <button id="themeToggle" class="pill-btn">🌙 Theme</button>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTAINER -->
+  <main class="container">
+
+    <!-- PAGE 1: HOME & PLANT PET -->
+    <section id="page-home" class="page active-page">
+      <div style="text-align: center;">
+        <h2 class="cute-title" style="font-size: 2rem; margin-bottom: 4px;">Welcome Back</h2>
+        <p id="quoteBanner" style="color: var(--subtext); font-style: italic;"></p>
+      </div>
+
+      <!-- VIRTUAL PLANT CARD -->
+      <div class="plant-card card">
+        <span class="badge" id="plantStageLabel">Companion</span>
+        <h3 id="plantName" class="cute-title" style="font-size: 1.6rem; margin-top: 4px;">Sprout</h3>
+        <div class="plant-avatar" id="plantDisplay">🌱</div>
+        <p id="plantStatus" style="font-size: 0.88rem; color: var(--subtext); margin-bottom: 12px;">Happy and healthy!</p>
+        
+        <div style="width: 100%; max-width: 340px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px;">
+          <div style="text-align: left;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600;">
+              <span>Hydration 💧</span>
+              <span id="waterValue">50%</span>
+            </div>
+            <div class="progress-bar-bg"><div id="waterBar" class="progress-bar-fill" style="width: 50%;"></div></div>
+          </div>
+          <div style="text-align: left;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600;">
+              <span>Sunlight ☀️</span>
+              <span id="sunValue">50%</span>
+            </div>
+            <div class="progress-bar-bg"><div id="sunBar" class="progress-bar-fill" style="width: 50%; background: #facc15;"></div></div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 16px;">
+          <button onclick="carePlant('water')" class="pill-btn">💧 Water (5 pts)</button>
+          <button onclick="carePlant('sun')" class="pill-btn">☀️ Sun (5 pts)</button>
+          <button onclick="carePlant('fertilize')" class="pill-btn primary">🌱 Fertilize (15 pts)</button>
+          <button onclick="openShop()" class="pill-btn ghost">🛒 Nursery Shop</button>
+        </div>
+      </div>
+
+      <!-- FOREST GARDEN CARD -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h3 class="cute-title" style="font-size: 1.3rem;">🌲 My Forest Garden</h3>
+          <span class="streak-badge" style="padding: 4px 10px; font-size: 0.8rem;" id="forestCount">0 Plants Grown</span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--subtext); margin-bottom: 14px;">Every completed focus session plants a healthy tree here. Don't quit early!</p>
+        <div id="forestGrid" style="display: flex; flex-wrap: wrap; gap: 10px; min-height: 40px; align-items: center;">
+          <span style="font-size: 0.85rem; color: var(--subtext); font-style: italic;">No full sessions completed yet today. Start focusing!</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE 2: GOALS -->
+    <section id="page-goals" class="page">
+      <div id="habits-page">
+        <div style="text-align: center; margin-bottom: 12px;">
+          <h2 class="cute-title" style="font-size: 2.2rem;">Daily Goals</h2>
+          <p style="color: var(--subtext);">Set small targets, build momentum, and celebrate progress.</p>
+        </div>
+
+        <div class="card">
+          <div class="habit-input-container">
+            <input type="text" id="goalInput" placeholder="Type a new goal and press Enter..." autofocus>
+            <button id="addGoalBtn" class="pill-btn primary">Add Goal</button>
+          </div>
+
+          <div style="margin-top: 20px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; margin-bottom: 6px;">
+              <span>Goal Completion</span>
+              <span id="progressPct">0%</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div id="progressBar" class="progress-bar-fill" style="width: 0%;">0%</div>
+            </div>
+          </div>
+
+          <ul id="goalList" class="habit-list"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE 3: FOCUS -->
+    <section id="page-timer" class="page">
+      <div id="focus-page" style="display: flex; flex-direction: column; gap: 24px; width: 100%;">
+        
+        <!-- CARD 1: LOCAL TIME (Independent Fullscreen Container) -->
+        <div id="localTimeContainer" class="card fullscreen-target" style="position: relative; width: 100%; text-align: center; padding: 32px;">
+        <button class="fullscreen-icon" onclick="toggleFullscreen('localTimeContainer')" title="Expand Local Time">⛶</button>
+        
+        <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 8px;">
+            <span class="badge">Local Time</span>
+            <button id="clockFormatToggle" onclick="toggleClockFormat()" class="pill-btn ghost" style="padding: 2px 10px; font-size: 0.75rem;">12H / 24H</button>
+        </div>
+
+        <div class="flip-clock-container" style="margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 12px;">
+            <span><span id="flipHours">00</span>:<span id="flipMinutes">00</span>:<span id="flipSeconds">00</span></span>
+            <span id="flipAmPm" style="font-size: 1.5rem; color: var(--accent); font-weight: 700; display: none;">AM</span>
+        </div>
+        </div>
+
+        <!-- CARD 2: FOCUS TIMER -->
+        <div id="timerCardContainer" class="card fullscreen-target" style="position: relative; width: 100%; text-align: center; padding: 32px;">
+          <button class="fullscreen-icon" onclick="toggleFullscreen('timerCardContainer')" title="Expand Focus Session">⛶</button>
+          <span class="badge">Focus Session</span>
+          
+          <div class="plant-avatar" id="focusPlantDisplay" style="font-size: 4rem; margin: 12px 0 0 0;">🌱</div>
+          <p id="focusPlantStatus" style="font-size: 0.85rem; color: var(--subtext); margin-bottom: 12px;">Keep studying to help me grow!</p>
+
+          <div class="timer-presets">
+            <button class="preset-pill active" onclick="setTimerDuration(5)">5m</button>
+            <button class="preset-pill" onclick="setTimerDuration(15)">15m</button>
+            <button class="preset-pill" onclick="setTimerDuration(25)">25m</button>
+            <button class="preset-pill" onclick="setTimerDuration(50)">50m</button>
+            <div style="display: inline-flex; gap: 4px; align-items: center;">
+              <input type="number" id="customMinutesInput" placeholder="Min" min="1" max="180" style="width: 60px; padding: 6px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); text-align: center;">
+              <button onclick="setCustomDuration()" class="pill-btn ghost" style="padding: 6px 12px;">Set</button>
+            </div>
+          </div>
+
+          <div id="timerDisplay" class="clock-display">05:00</div>
+
+          <div style="display: flex; gap: 12px; justify-content: center;">
+            <button id="startTimerBtn" onclick="handleTimerToggle()" class="pill-btn primary" style="padding: 12px 32px; font-size: 1rem;">Start Focus</button>
+            <button onclick="requestTimerReset()" class="pill-btn ghost">Reset</button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- PAGE 4: STATS & ANALYTICS -->
+    <section id="page-stats" class="page">
+      <div style="text-align: center; margin-bottom: 8px;">
+        <h2 class="cute-title" style="font-size: 2.2rem;">Focus Analytics</h2>
+        <p style="color: var(--subtext);">Track your personal consistency and progress milestones.</p>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card card">
+          <span class="badge">Today</span>
+          <h3 style="font-size: 2.5rem; color: var(--accent);"><span id="todayFocusTime">0</span> <small style="font-size: 1rem;">mins</small></h3>
+          <div class="progress-bar-bg"><div id="todayProgress" class="progress-bar-fill" style="width: 0%;"></div></div>
+        </div>
+        <div class="stat-card card">
+          <span class="badge">This Week</span>
+          <h3 style="font-size: 2.5rem; color: var(--accent);"><span id="weeklyFocusTime">0</span> <small style="font-size: 1rem;">mins</small></h3>
+          <div class="progress-bar-bg"><div id="weeklyProgress" class="progress-bar-fill" style="width: 0%;"></div></div>
+        </div>
+        <div class="stat-card card">
+          <span class="badge">This Month</span>
+          <h3 style="font-size: 2.5rem; color: var(--accent);"><span id="monthlyFocusTime">0</span> <small style="font-size: 1rem;">hrs</small></h3>
+          <div class="progress-bar-bg"><div id="monthlyProgress" class="progress-bar-fill" style="width: 0%;"></div></div>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-top: 12px;">
+        <button onclick="resetStats()" class="pill-btn danger">Reset Stats Data</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- PLANT SHOP MODAL -->
+  <div id="shopModal" class="shop-modal">
+    <div class="shop-content">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="cute-title" style="font-size: 1.5rem;">🌱 Plant Nursery</h3>
+        <button onclick="closeShop()" class="delete-ghost">✕</button>
+      </div>
+      <div id="shopGrid" class="shop-grid"></div>
+    </div>
+  </div>
+
+  <!-- WARNING CONFIRMATION MODAL -->
+  <div id="warningModal" class="warning-modal">
+    <div class="warning-content">
+      <div style="font-size: 3rem; margin-bottom: 8px;">🥀</div>
+      <h3 class="cute-title" style="font-size: 1.5rem; margin-bottom: 8px;">Quit Session?</h3>
+      <p style="color: var(--subtext); font-size: 0.95rem;">If you quit now, your plant will wither and active session points won't be saved!</p>
+      <div class="warning-actions">
+        <button onclick="closeWarningModal()" class="pill-btn ghost">Keep Going</button>
+        <button onclick="confirmStopTimer()" class="pill-btn danger">Quit & Wither 🥀</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // --- 1. ROUTING & SETUP ---
+    function handleRouting() {
+      const cleanHash = window.location.hash.replace('#', '').trim();
+      const targetPage = cleanHash || 'home';
+
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+      const activePage = document.getElementById(`page-${targetPage}`);
+      const activeNav = document.querySelector(`.nav-item[data-page="${targetPage}"]`);
+
+      if (activePage) activePage.classList.add('active-page');
+      else document.getElementById('page-home')?.classList.add('active-page');
+
+      if (activeNav) activeNav.classList.add('active');
+    }
+
+    window.addEventListener('hashchange', handleRouting);
+
+    window.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.nav-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const page = btn.getAttribute('data-page');
+          if (page) window.location.hash = page;
+        });
+      });
+
+      handleRouting();
+      displayQuote();
+      startLiveClock();
+      updateStatsDisplay();
+      initPlantSystem();
+
+      // Theme Toggle
+      document.getElementById('themeToggle')?.addEventListener('click', () => {
+        document.body.classList.toggle('dark-theme');
+      });
+
+      // Goal Listeners
+      const goalInput = document.getElementById('goalInput');
+      const addGoalBtn = document.getElementById('addGoalBtn');
+
+      if (goalInput) {
+        goalInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            addNewGoal();
+          }
+        });
+      }
+      if (addGoalBtn) addGoalBtn.addEventListener('click', addNewGoal);
+    });
+
+    // --- 2. INDEPENDENT FULLSCREEN LOGIC ---
+    function toggleFullscreen(elementId) {
+      const el = document.getElementById(elementId);
+      if (!el) return;
+
+      if (!document.fullscreenElement) {
+        el.requestFullscreen().catch(err => console.error(err));
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    // --- 3. PLANT & FOREST SYSTEM ---
+    const PLANT_CATALOG = [
+      { id: 'sprout', name: 'Sprout', icon: '🌱', price: 0 },
+      { id: 'succulent', name: 'Succulent', icon: '🪴', price: 20 },
+      { id: 'sunflower', name: 'Sunflower', icon: '🌻', price: 40 },
+      { id: 'cherry', name: 'Cherry Blossom', icon: '🌸', price: 60 },
+      { id: 'strawberry', name: 'Strawberry', icon: '🍓', price: 80 },
+      { id: 'cactus', name: 'Cactus', icon: '🌵', price: 100 },
+      { id: 'mushroom', name: 'Mushroom', icon: '🍄', price: 120 },
+      { id: 'lotus', name: 'Lotus', icon: '🪷', price: 150 },
+      { id: 'tree', name: 'Bonsai Tree', icon: '🌳', price: 200 }
+    ];
+
+    let userPoints = Number(localStorage.getItem('userPoints')) || 0;
+    let unlockedPlants = JSON.parse(localStorage.getItem('unlockedPlants')) || ['sprout'];
+    let activePlantId = localStorage.getItem('activePlantId') || 'sprout';
+    let plantWater = Number(localStorage.getItem('plantWater')) || 50;
+    let plantSun = Number(localStorage.getItem('plantSun')) || 50;
+    let isWithered = localStorage.getItem('isWithered') === 'true';
+    let forest = JSON.parse(localStorage.getItem('forestGarden')) || [];
+
+    function initPlantSystem() {
+      updatePointsDisplay();
+      renderPlant();
+    }
+
+    function updatePointsDisplay() {
+      const el = document.getElementById('userPointsDisplay');
+      if (el) el.textContent = userPoints;
+      localStorage.setItem('userPoints', userPoints);
+    }
+
+    function renderPlant() {
+      const current = PLANT_CATALOG.find(p => p.id === activePlantId) || PLANT_CATALOG[0];
+      
+      const iconEl = document.getElementById('plantDisplay');
+      const nameEl = document.getElementById('plantName');
+      const statusEl = document.getElementById('plantStatus');
+      const focusIconEl = document.getElementById('focusPlantDisplay');
+      const focusStatusEl = document.getElementById('focusPlantStatus');
+      const waterBar = document.getElementById('waterBar');
+      const sunBar = document.getElementById('sunBar');
+      const waterVal = document.getElementById('waterValue');
+      const sunVal = document.getElementById('sunValue');
+
+      if (isWithered) {
+        if (iconEl) iconEl.textContent = '🥀';
+        if (nameEl) nameEl.textContent = 'Withered Plant';
+        if (statusEl) statusEl.textContent = 'Withered! Complete a full session to revive.';
+        if (focusIconEl) focusIconEl.textContent = '🥀';
+        if (focusStatusEl) focusStatusEl.textContent = 'Your plant is withered. Finish a session to save it!';
+      } else {
+        if (iconEl) iconEl.textContent = current.icon;
+        if (nameEl) nameEl.textContent = current.name;
+        if (statusEl) statusEl.textContent = 'Happy and healthy!';
+        if (focusIconEl) focusIconEl.textContent = current.icon;
+        if (focusStatusEl) focusStatusEl.textContent = 'Keep studying to help me grow!';
+      }
+
+      if (waterBar) waterBar.style.width = `${plantWater}%`;
+      if (sunBar) sunBar.style.width = `${plantSun}%`;
+      if (waterVal) waterVal.textContent = `${plantWater}%`;
+      if (sunVal) sunVal.textContent = `${plantSun}%`;
+
+      localStorage.setItem('plantWater', plantWater);
+      localStorage.setItem('plantSun', plantSun);
+      localStorage.setItem('activePlantId', activePlantId);
+      localStorage.setItem('isWithered', isWithered);
+
+      renderForestGarden();
+    }
+
+    function renderForestGarden() {
+      const forestGrid = document.getElementById('forestGrid');
+      const forestCount = document.getElementById('forestCount');
+      
+      if (forestCount) forestCount.textContent = `${forest.length} Plants Grown`;
+      if (forestGrid) {
+        if (forest.length > 0) {
+          forestGrid.innerHTML = forest.map(tree => `<span style="font-size: 1.8rem;">${tree}</span>`).join('');
+        } else {
+          forestGrid.innerHTML = `<span style="font-size: 0.85rem; color: var(--subtext); font-style: italic;">No full sessions completed yet today. Start focusing!</span>`;
+        }
+      }
+    }
+
+    function carePlant(action) {
+      if (isWithered) {
+        alert("Your plant is withered! Complete a full focus session to revive it 🌿");
+        return;
+      }
+
+      if (action === 'water' && userPoints >= 5) {
+        userPoints -= 5;
+        plantWater = Math.min(100, plantWater + 20);
+      } else if (action === 'sun' && userPoints >= 5) {
+        userPoints -= 5;
+        plantSun = Math.min(100, plantSun + 20);
+      } else if (action === 'fertilize' && userPoints >= 15) {
+        userPoints -= 15;
+        plantWater = Math.min(100, plantWater + 25);
+        plantSun = Math.min(100, plantSun + 25);
+      } else {
+        alert("Not enough points! Complete focus sessions to earn more.");
+        return;
+      }
+      updatePointsDisplay();
+      renderPlant();
+    }
+
+    function openShop() {
+      if (isWithered) {
+        alert("Revive your plant first before visiting the nursery!");
+        return;
+      }
+      const grid = document.getElementById('shopGrid');
+      if (!grid) return;
+      grid.innerHTML = '';
+
+      PLANT_CATALOG.forEach(p => {
+        const isUnlocked = unlockedPlants.includes(p.id);
+        const isActive = activePlantId === p.id;
+
+        const item = document.createElement('div');
+        item.className = 'shop-item';
+        item.innerHTML = `
+          <div style="font-size: 2.2rem;">${p.icon}</div>
+          <strong class="cute-title">${p.name}</strong>
+          <p><small style="color: var(--subtext);">${p.price === 0 ? 'Free' : p.price + ' pts'}</small></p>
+          ${isActive ? '<button class="pill-btn primary" style="font-size: 0.75rem; padding: 4px 12px;" disabled>Active</button>' : 
+            isUnlocked ? `<button onclick="selectPlant('${p.id}')" class="pill-btn ghost" style="font-size: 0.75rem; padding: 4px 12px;">Select</button>` :
+            `<button onclick="buyPlant('${p.id}', ${p.price})" class="pill-btn" style="font-size: 0.75rem; padding: 4px 12px;">Unlock</button>`}
+        `;
+        grid.appendChild(item);
+      });
+
+      document.getElementById('shopModal')?.classList.add('active');
+    }
+
+    function closeShop() {
+      document.getElementById('shopModal')?.classList.remove('active');
+    }
+
+    function buyPlant(id, price) {
+      if (userPoints >= price) {
+        userPoints -= price;
+        unlockedPlants.push(id);
+        activePlantId = id;
+        localStorage.setItem('unlockedPlants', JSON.stringify(unlockedPlants));
+        updatePointsDisplay();
+        renderPlant();
+        openShop();
+      } else {
+        alert("Not enough points to unlock this plant!");
+      }
+    }
+
+    function selectPlant(id) {
+      activePlantId = id;
+      renderPlant();
+      openShop();
+    }
+
+    // --- 4. GOALS LOGIC ---
+    function addNewGoal() {
+      const input = document.getElementById('goalInput');
+      const list = document.getElementById('goalList');
+      if (!input || !list) return;
+
+      const text = input.value.trim();
+      if (!text) return;
+
+      const li = document.createElement('li');
+      li.className = 'habit-item';
+      li.innerHTML = `
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+          <input type="checkbox" class="habit-check" onchange="updateGoalProgress()">
+          <span>${text}</span>
+        </label>
+        <button onclick="deleteGoal(this)" class="delete-ghost">✕</button>
+      `;
+
+      list.appendChild(li);
+      input.value = '';
+      updateGoalProgress();
+    }
+
+    function deleteGoal(btn) {
+      btn.closest('.habit-item')?.remove();
+      updateGoalProgress();
+    }
+
+    let hasCelebrated = false;
+    function updateGoalProgress() {
+      const checkboxes = document.querySelectorAll('.habit-check');
+      const progressBar = document.getElementById('progressBar');
+      const progressPct = document.getElementById('progressPct');
+
+      if (!checkboxes.length) {
+        if (progressBar) progressBar.style.width = '0%';
+        if (progressPct) progressPct.textContent = '0%';
+        hasCelebrated = false;
+        return;
+      }
+
+      let checked = 0;
+      checkboxes.forEach(c => { if (c.checked) checked++; });
+
+      const pct = Math.round((checked / checkboxes.length) * 100);
+      if (progressBar) {
+        progressBar.style.width = `${pct}%`;
+        progressBar.textContent = `${pct}%`;
+      }
+      if (progressPct) progressPct.textContent = `${pct}%`;
+
+      if (pct === 100 && !hasCelebrated) {
+        if (typeof confetti === 'function') confetti({ particleCount: 70, spread: 60 });
+        hasCelebrated = true;
+      } else if (pct < 100) {
+        hasCelebrated = false;
+      }
+    }
+
+    
+    // --- 5. LIVE FLIP CLOCK (WITH 12H / 24H TOGGLE) ---
+    let is12HourFormat = localStorage.getItem('is12HourFormat') === 'true';
+
+    function toggleClockFormat() {
+    is12HourFormat = !is12HourFormat;
+    localStorage.setItem('is12HourFormat', is12HourFormat);
+    updateLiveClock();
+    }
+
+    function updateLiveClock() {
+    const now = new Date();
+    let hours = now.getHours();
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    
+    const hEl = document.getElementById('flipHours');
+    const mEl = document.getElementById('flipMinutes');
+    const sEl = document.getElementById('flipSeconds');
+    const amPmEl = document.getElementById('flipAmPm');
+
+    if (is12HourFormat) {
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        hours = hours ? hours : 12; // convert 0 to 12
+        
+        if (hEl) hEl.textContent = String(hours).padStart(2, '0');
+        if (amPmEl) {
+        amPmEl.textContent = ampm;
+        amPmEl.style.display = 'inline-block';
+        }
+    } else {
+        if (hEl) hEl.textContent = String(hours).padStart(2, '0');
+        if (amPmEl) amPmEl.style.display = 'none';
+    }
+
+    if (mEl) mEl.textContent = minutes;
+    if (sEl) sEl.textContent = seconds;
+    }
+
+    function startLiveClock() {
+    updateLiveClock();
+    setInterval(updateLiveClock, 1000);
+    }
+
+    // --- 6. FOCUS TIMER WITH FOREST WITHER & REVIVE ---
+    let timer = null, selectedMinutes = 5, remaining = 300, isRunning = false;
+
+    function setTimerDuration(mins) {
+      if (isRunning) requestTimerReset();
+      selectedMinutes = mins;
+      remaining = mins * 60;
+      updateClockDisplay();
+
+      document.querySelectorAll('.preset-pill').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.textContent === `${mins}m`) btn.classList.add('active');
+      });
+    }
+
+    function setCustomDuration() {
+      const input = document.getElementById('customMinutesInput');
+      if (!input) return;
+      const val = parseInt(input.value, 10);
+      if (!val || val < 1 || val > 180) return alert("Enter minutes between 1 and 180.");
+      setTimerDuration(val);
+      input.value = '';
+    }
+
+    function handleTimerToggle() {
+      if (!isRunning) {
+        startTimer();
+      } else {
+        document.getElementById('warningModal')?.classList.add('active');
+      }
+    }
+
+    function startTimer() {
+      const btn = document.getElementById('startTimerBtn');
+      isRunning = true;
+      if (btn) btn.textContent = 'Pause Focus';
+      
+      const focusStatus = document.getElementById('focusPlantStatus');
+      if (focusStatus) focusStatus.textContent = "Focusing... Don't give up!";
+
+      timer = setInterval(() => {
+        remaining--;
+        updateClockDisplay();
+        if (remaining <= 0) {
+          clearInterval(timer);
+          
+          const earned = Math.max(1, Math.round((selectedMinutes / 30) * 10));
+          userPoints += earned;
+          updatePointsDisplay();
+
+          // Forest reward & Plant Revival
+          const currentPlant = PLANT_CATALOG.find(p => p.id === activePlantId) || PLANT_CATALOG[0];
+          forest.push(currentPlant.icon);
+          localStorage.setItem('forestGarden', JSON.stringify(forest));
+
+          if (isWithered) {
+            isWithered = false;
+            alert(`🎉 Session Complete! Your plant has been revived and you earned 🪙 ${earned} points!`);
+          } else {
+            alert(`🎉 Focus session completed! You earned 🪙 ${earned} points and planted a new tree in your forest!`);
+          }
+
+          if (typeof confetti === 'function') confetti({ particleCount: 100, spread: 80 });
+          
+          recordCompletedFocusTime(selectedMinutes);
+          confirmStopTimer(false);
+          renderPlant();
+        }
+      }, 1000);
+    }
+
+    function requestTimerReset() {
+      if (isRunning) {
+        document.getElementById('warningModal')?.classList.add('active');
+      } else {
+        confirmStopTimer(false);
+      }
+    }
+
+    function closeWarningModal() {
+      document.getElementById('warningModal')?.classList.remove('active');
+    }
+
+    function confirmStopTimer(didWither = true) {
+      clearInterval(timer);
+      isRunning = false;
+      
+      if (didWither) {
+        isWithered = true;
+      }
+
+      remaining = selectedMinutes * 60;
+      const btn = document.getElementById('startTimerBtn');
+      if (btn) btn.textContent = 'Start Focus';
+      
+      updateClockDisplay();
+      closeWarningModal();
+      renderPlant();
+    }
+
+    function updateClockDisplay() {
+      const display = document.getElementById('timerDisplay');
+      if (!display) return;
+      const m = String(Math.floor(remaining / 60)).padStart(2, '0');
+      const s = String(remaining % 60).padStart(2, '0');
+      display.textContent = `${m}:${s}`;
+    }
+
+    // --- 7. STATS ANALYTICS ---
+    function recordCompletedFocusTime(minutes) {
+      let today = Number(localStorage.getItem('todayFocus')) || 0;
+      let weekly = Number(localStorage.getItem('weeklyFocus')) || 0;
+
+      today += minutes;
+      weekly += minutes;
+
+      localStorage.setItem('todayFocus', today);
+      localStorage.setItem('weeklyFocus', weekly);
+
+      updateStatsDisplay();
+    }
+
+    function updateStatsDisplay() {
+      const today = Number(localStorage.getItem('todayFocus')) || 0;
+      const weekly = Number(localStorage.getItem('weeklyFocus')) || 0;
+
+      const todayEl = document.getElementById('todayFocusTime');
+      const weeklyEl = document.getElementById('weeklyFocusTime');
+      const monthlyEl = document.getElementById('monthlyFocusTime');
+
+      if (todayEl) todayEl.textContent = today;
+      if (weeklyEl) weeklyEl.textContent = weekly;
+      if (monthlyEl) monthlyEl.textContent = (weekly / 60).toFixed(1);
+
+      const todayProg = document.getElementById('todayProgress');
+      const weeklyProg = document.getElementById('weeklyProgress');
+      const monthlyProg = document.getElementById('monthlyProgress');
+
+      if (todayProg) todayProg.style.width = `${Math.min(100, Math.round((today / 60) * 100))}%`;
+      if (weeklyProg) weeklyProg.style.width = `${Math.min(100, Math.round((weekly / 300) * 100))}%`;
+      if (monthlyProg) monthlyProg.style.width = `${Math.min(100, Math.round((weekly / 300) * 100))}%`;
+    }
+
+    function resetStats() {
+      if (confirm("Are you sure you want to reset your focus analytics?")) {
+        localStorage.removeItem('todayFocus');
+        localStorage.removeItem('weeklyFocus');
+        localStorage.removeItem('forestGarden');
+        forest = [];
+        updateStatsDisplay();
+        renderForestGarden();
+      }
+    }
+
+    // --- 8. UTILS ---
+    const quotes = [
+      "\"Small daily steps build stunning long-term results.\"",
+      "\"Action creates momentum. Start tiny today.\"",
+      "\"Consistency transforms average into extraordinary.\""
+    ];
+
+    function displayQuote() {
+      const el = document.getElementById('quoteBanner');
+      if (el) el.textContent = quotes[Math.floor(Math.random() * quotes.length)];
+    }
+  </script>
+</body>
+</html>

@@ -765,6 +765,36 @@
       const el = document.getElementById('quoteBanner');
       if (el) el.textContent = quotes[Math.floor(Math.random() * quotes.length)];
     }
+
+  
   </script>
+  <!-- SVG Filter for Liquid Distortion Effect -->
+<svg style="display: none;">
+  <defs>
+    <filter id="liquid-distortion">
+      <feTurbulence type="fractalNoise" baseFrequency="0.015 0.015" numOctaves="2" result="noise" seed="1">
+        <animate attributeName="baseFrequency" dur="10s" values="0.015 0.015;0.025 0.015;0.015 0.025;0.015 0.015" repeatCount="indefinite"/>
+      </feTurbulence>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="18" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+</svg>
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyBM3L-boIhYzyKXAErZNBAF3dzNFOQIqY0",
+  authDomain: "elevia-cd0e2.firebaseapp.com",
+  projectId: "elevia-cd0e2",
+  storageBucket: "elevia-cd0e2.firebasestorage.app",
+  messagingSenderId: "154864319234",
+  appId: "1:154864319234:web:d5099e8d99224a9daf201b"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
 </body>
 </html>

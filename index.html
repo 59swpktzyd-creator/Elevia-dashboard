@@ -3,10 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Focus & Goal Dashboard</title>
+  <title>Elevia — Personal Focus Dashboard</title>
+  
   <link rel="stylesheet" href="style.css">
-  <!-- Confetti library -->
+
+  <!-- External Libraries -->
+  <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
   <style>
     /* MODAL POPUP STYLES FOR STOP WARNING */
     .warning-modal {
@@ -38,6 +42,7 @@
       justify-content: center;
       margin-top: 20px;
     }
+
     /* INDEPENDENT FULLSCREEN DISPLAY ENHANCEMENTS */
     .fullscreen-target:fullscreen {
       width: 100vw !important;
@@ -59,17 +64,6 @@
       gap: 24px !important;
     }
   </style>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Elevia — Personal Focus Dashboard</title>
-  
-  <!-- Add Lucide SVG Icon Library -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-  
-  <link rel="stylesheet" href="style.css">
-</head>
-
 </head>
 <body>
 
@@ -80,10 +74,18 @@
     </div>
     
     <div class="nav-links">
-      <button class="nav-item active" data-page="home">🏠 Home</button>
-      <button class="nav-item" data-page="goals">🎯 Goals</button>
-      <button class="nav-item" data-page="timer">⏱️ Focus</button>
-      <button class="nav-item" data-page="stats">📊 Stats</button>
+      <button class="nav-item active" data-page="home">
+        <i data-lucide="home" style="width: 16px; height: 16px; vertical-align: middle;"></i> Home
+      </button>
+      <button class="nav-item" data-page="goals">
+        <i data-lucide="target" style="width: 16px; height: 16px; vertical-align: middle;"></i> Goals
+      </button>
+      <button class="nav-item" data-page="timer">
+        <i data-lucide="clock" style="width: 16px; height: 16px; vertical-align: middle;"></i> Focus
+      </button>
+      <button class="nav-item" data-page="stats">
+        <i data-lucide="bar-chart-2" style="width: 16px; height: 16px; vertical-align: middle;"></i> Stats
+      </button>
     </div>
 
     <div style="display: flex; align-items: center; gap: 12px;">
@@ -978,5 +980,8 @@
       </button>
     </div>
   </div>
+  <script>
+    lucide.createIcons();
+  </script>
 </body>
 </html>

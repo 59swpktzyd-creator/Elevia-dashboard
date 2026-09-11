@@ -64,6 +64,11 @@
 
   <!-- NAVIGATION BAR -->
   <nav class="navbar">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div class="streak-badge" style="padding: 6px 14px; font-size: 0.85rem;">🪙 <span id="userPointsDisplay">0</span> Pts</div>
+      <button id="authBtn" class="pill-btn primary" onclick="toggleAuthModal()">🔑 Sign In</button>
+      <button id="themeToggle" class="pill-btn">🌙 Theme</button>
+    </div>
     <div class="nav-links">
       <button class="nav-item active" data-page="home">🏠 Home</button>
       <button class="nav-item" data-page="goals">🎯 Goals</button>
@@ -215,7 +220,17 @@
         <h2 class="cute-title" style="font-size: 2.2rem;">Focus Analytics</h2>
         <p style="color: var(--subtext);">Track your personal consistency and progress milestones.</p>
       </div>
-
+      <!-- LEADERBOARD CARD -->
+      <div class="card" style="margin-top: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3 class="cute-title" style="font-size: 1.4rem;">🏆 Global Community Leaderboard</h3>
+          <span class="badge">Live Top Focusers</span>
+        </div>
+        
+        <div id="leaderboardList" style="display: flex; flex-direction: column; gap: 10px;">
+          <p style="color: var(--subtext); text-align: center; font-style: italic;">Sign in to view and join the global leaderboard!</p>
+        </div>
+      </div>
       <div class="stats-grid">
         <div class="stat-card card">
           <span class="badge">Today</span>
@@ -717,6 +732,8 @@
       localStorage.setItem('weeklyFocus', weekly);
 
       updateStatsDisplay();
+    
+      if (typeof window.saveProgressToCloud === 'function') window.saveProgressToCloud();
     }
 
     function updateStatsDisplay() {
@@ -777,19 +794,169 @@
   </svg>
 
   <!-- Firebase Integration Script -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  <!-- Firebase Integration Script (Auth & Leaderboard) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { 
+    getAuth, 
+    GoogleAuthProvider, 
+    signInWithPopup, 
+    signOut, 
+    onAuthStateChanged 
+  } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+  import { 
+    getFirestore, 
+    doc, 
+    setDoc, 
+    getDoc, 
+    collection, 
+    query, 
+    orderBy, 
+    limit, 
+    onSnapshot 
+  } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBM3L-boIhYzyKXAErZNBAF3dzNFOQIqY0",
-      authDomain: "elevia-cd0e2.firebaseapp.com",
-      projectId: "elevia-cd0e2",
-      storageBucket: "elevia-cd0e2.firebasestorage.app",
-      messagingSenderId: "154864319234",
-      appId: "1:154864319234:web:d5099e8d99224a9daf201b"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyBM3L-boIhYzyKXAErZNBAF3dzNFOQIqY0",
+    authDomain: "elevia-cd0e2.firebaseapp.com",
+    projectId: "elevia-cd0e2",
+    storageBucket: "elevia-cd0e2.firebasestorage.app",
+    messagingSenderId: "154864319234",
+    appId: "1:154864319234:web:d5099e8d99224a9daf201b"
+  };
 
-    const app = initializeApp(firebaseConfig);
-  </script>
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const provider = new GoogleAuthProvider();
+
+  let currentUser = null;
+
+  // --- AUTHENTICATION LISTENERS ---
+  window.toggleAuthModal = () => {
+    if (currentUser) {
+      if (confirm("Do you want to log out of Elevia?")) {
+        signOut(auth);
+      }
+    } else {
+      document.getElementById('authModal')?.classList.toggle('active');
+    }
+  };
+
+  document.getElementById('googleSignInBtn')?.addEventListener('click', () => {
+    signInWithPopup(auth, provider)
+      .then((result) => {
+        document.getElementById('authModal')?.classList.remove('active');
+      })
+      .catch((error) => {
+        console.error("Sign-in error:", error);
+        alert("Could not sign in with Google. Check Firebase Auth settings!");
+      });
+  });
+
+  // Handle Auth State Changes
+  onAuthStateChanged(auth, async (user) => {
+    const authBtn = document.getElementById('authBtn');
+    currentUser = user;
+
+    if (user) {
+      if (authBtn) authBtn.textContent = `👤 ${user.displayName.split(' ')[0]}`;
+      await syncUserDataWithCloud(user);
+      listenToLeaderboard();
+    } else {
+      if (authBtn) authBtn.textContent = '🔑 Sign In';
+    }
+  });
+
+  // --- SYNC USER DATA TO FIRESTORE ---
+  async function syncUserDataWithCloud(user) {
+    const userRef = doc(db, "users", user.uid);
+    const userSnap = await getDoc(userRef);
+
+    if (userSnap.exists()) {
+      // Load saved cloud data into local variables
+      const data = userSnap.data();
+      window.userPoints = data.points || 0;
+      localStorage.setItem('userPoints', window.userPoints);
+      if (typeof updatePointsDisplay === 'function') updatePointsDisplay();
+    }
+
+    // Save current local progress to Firebase
+    saveProgressToCloud();
+  }
+
+  window.saveProgressToCloud = async () => {
+    if (!currentUser) return;
+
+    const userRef = doc(db, "users", currentUser.uid);
+    const totalFocus = Number(localStorage.getItem('weeklyFocus')) || 0;
+
+    await setDoc(userRef, {
+      displayName: currentUser.displayName || "Anonymous Sprout",
+      photoURL: currentUser.photoURL || "",
+      points: Number(localStorage.getItem('userPoints')) || 0,
+      totalFocusMinutes: totalFocus,
+      lastActive: new Date()
+    }, { merge: true });
+  };
+
+  // --- LIVE LEADERBOARD LISTENERS ---
+  function listenToLeaderboard() {
+    const leaderboardEl = document.getElementById('leaderboardList');
+    if (!leaderboardEl) return;
+
+    const q = query(collection(db, "users"), orderBy("totalFocusMinutes", "desc"), limit(5));
+
+    onSnapshot(q, (snapshot) => {
+      leaderboardEl.innerHTML = '';
+      let rank = 1;
+
+      if (snapshot.empty) {
+        leaderboardEl.innerHTML = `<p style="color: var(--subtext); text-align: center;">No rankings yet! Complete focus sessions to be #1.</p>`;
+        return;
+      }
+
+      snapshot.forEach((doc) => {
+        const u = doc.data();
+        const row = document.createElement('div');
+        row.style.cssText = "display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: var(--bg); border-radius: 16px; border: 1px solid var(--border);";
+        
+        const rankMedal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
+
+        row.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-weight: 700; font-size: 1.1rem; width: 24px;">${rankMedal}</span>
+            <span style="font-weight: 600;">${u.displayName}</span>
+          </div>
+          <div style="display: flex; gap: 16px; font-size: 0.88rem;">
+            <span>⏱️ <strong>${u.totalFocusMinutes || 0}</strong> mins</span>
+            <span>🪙 <strong>${u.points || 0}</strong> pts</span>
+          </div>
+        `;
+
+        leaderboardEl.appendChild(row);
+        rank++;
+      });
+    });
+  }
+</script>
+  <!-- AUTHENTICATION MODAL -->
+  <div id="authModal" class="shop-modal">
+    <div class="shop-content" style="max-width: 360px; text-align: center;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 class="cute-title" style="font-size: 1.5rem;">Join Elevia</h3>
+        <button onclick="toggleAuthModal()" class="delete-ghost">✕</button>
+      </div>
+      
+      <p style="color: var(--subtext); font-size: 0.9rem; margin-bottom: 20px;">
+        Sign in to save your focus points, forest garden, and rank on the global leaderboard!
+      </p>
+
+      <button id="googleSignInBtn" class="pill-btn primary" style="width: 100%; padding: 12px; display: flex; justify-content: center; align-items: center; gap: 8px;">
+        🌐 Sign in with Google
+      </button>
+    </div>
+  </div>
 </body>
 </html>

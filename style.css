@@ -524,3 +524,68 @@ body.dark-theme .pill-btn.danger {
 #stop-btn:hover {
   opacity: 0.9;
 }
+/* --- MOBILE RESPONSIVE OVERRIDES --- */
+@media (max-width: 600px) {
+  /* Prevent horizontal screen scrolling */
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  /* Compact Navbar for mobile screens */
+  .navbar {
+    padding: 10px 14px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .nav-brand {
+    font-size: 1.2rem;
+  }
+
+  .nav-links {
+    order: 3; /* Move navigation links below logo and user profile on mobile */
+    width: 100%;
+    justify-content: space-around;
+    padding: 3px;
+  }
+
+  .nav-item {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+
+  /* Adjust Container padding */
+  .container {
+    padding: 16px 12px;
+  }
+
+  /* Make Cards fit screen width without bursting margins */
+  .card, .stat-card {
+    padding: 18px 14px;
+    border-radius: 16px;
+  }
+
+  /* Scale down massive timer clock on phones */
+  .clock-display {
+    font-size: 3.2rem;
+    margin: 12px 0;
+  }
+
+  .plant-avatar {
+    font-size: 3.8rem;
+  }
+
+  /* Stack stats grid cleanly on small displays */
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  /* Keep shop and auth modals fitting inside mobile viewports */
+  .shop-content {
+    padding: 20px 16px;
+    border-radius: 18px;
+    width: 95%;
+  }
+}

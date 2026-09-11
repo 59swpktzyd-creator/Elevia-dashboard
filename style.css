@@ -30,6 +30,10 @@ body.dark-theme .liquid-glass-card {
   letter-spacing: -0.5px;
   background: linear-gradient(135deg, var(--accent), #a78bfa, #f472b6);
   -webkit-background-clip: text;
+  background: linear-gradient(135deg, var(--accent), #a78bfa, #f472b6);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
   -webkit-text-fill-color: transparent;
   display: inline-block;
   cursor: pointer;

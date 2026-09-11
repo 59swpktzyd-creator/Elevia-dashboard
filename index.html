@@ -64,19 +64,20 @@
 
   <!-- NAVIGATION BAR -->
   <nav class="navbar">
-    <div style="display: flex; align-items: center; gap: 12px;">
-      <div class="streak-badge" style="padding: 6px 14px; font-size: 0.85rem;">🪙 <span id="userPointsDisplay">0</span> Pts</div>
-      <button id="authBtn" class="pill-btn primary" onclick="toggleAuthModal()">🔑 Sign In</button>
-      <button id="themeToggle" class="pill-btn">🌙 Theme</button>
+    <div class="nav-brand">
+      <h2 class="liquid-logo">Elevia</h2>
     </div>
+    
     <div class="nav-links">
       <button class="nav-item active" data-page="home">🏠 Home</button>
       <button class="nav-item" data-page="goals">🎯 Goals</button>
       <button class="nav-item" data-page="timer">⏱️ Focus</button>
       <button class="nav-item" data-page="stats">📊 Stats</button>
     </div>
+
     <div style="display: flex; align-items: center; gap: 12px;">
       <div class="streak-badge" style="padding: 6px 14px; font-size: 0.85rem;">🪙 <span id="userPointsDisplay">0</span> Pts</div>
+      <button id="authBtn" class="pill-btn primary" onclick="toggleAuthModal()">🔑 Sign In</button>
       <button id="themeToggle" class="pill-btn">🌙 Theme</button>
     </div>
   </nav>
@@ -215,42 +216,50 @@
     </section>
 
     <!-- PAGE 4: STATS & ANALYTICS -->
-    <section id="page-stats" class="page">
-      <div style="text-align: center; margin-bottom: 8px;">
-        <h2 class="cute-title" style="font-size: 2.2rem;">Focus Analytics</h2>
+    <section id="page-stats" class="page-section">
+      <div class="card" style="text-align: center; margin-bottom: 24px;">
+        <h2 class="cute-title" style="font-size: 2rem;">Focus Analytics</h2>
         <p style="color: var(--subtext);">Track your personal consistency and progress milestones.</p>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 24px;">
+      <div style="background: var(--bg); padding: 16px; border-radius: 16px; border: 1px solid var(--border);">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--subtext); text-transform: uppercase;">Today</span>
+        <h3 style="font-size: 2rem; margin: 8px 0;"><span id="todayFocusTime">0</span> <span style="font-size: 1rem; color: var(--subtext);">mins</span></h3>
+        <div style="width: 100%; background: var(--border); height: 6px; border-radius: 3px; overflow: hidden;">
+          <div id="todayProgress" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.3s;"></div>
+        </div>
       </div>
-      <!-- LEADERBOARD CARD -->
-      <div class="card" style="margin-top: 24px;">
+
+      <div style="background: var(--bg); padding: 16px; border-radius: 16px; border: 1px solid var(--border);">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--subtext); text-transform: uppercase;">This Week</span>
+        <h3 style="font-size: 2rem; margin: 8px 0;"><span id="weeklyFocusTime">0</span> <span style="font-size: 1rem; color: var(--subtext);">mins</span></h3>
+        <div style="width: 100%; background: var(--border); height: 6px; border-radius: 3px; overflow: hidden;">
+          <div id="weeklyProgress" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.3s;"></div>
+        </div>
+      </div>
+
+      <div style="background: var(--bg); padding: 16px; border-radius: 16px; border: 1px solid var(--border);">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--subtext); text-transform: uppercase;">This Month</span>
+        <h3 style="font-size: 2rem; margin: 8px 0;"><span id="monthlyFocusTime">0.0</span> <span style="font-size: 1rem; color: var(--subtext);">hrs</span></h3>
+        <div style="width: 100%; background: var(--border); height: 6px; border-radius: 3px; overflow: hidden;">
+          <div id="monthlyProgress" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.3s;"></div>
+        </div>
+      </div>
+    </div>
+
+    <button onclick="resetStats()" class="delete-ghost" style="margin-top: 20px; font-size: 0.85rem;">Reset Stats Data</button>
+  </div>
+
+  <!-- LEADERBOARD CARD -->
+      <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
           <h3 class="cute-title" style="font-size: 1.4rem;">🏆 Global Community Leaderboard</h3>
           <span class="badge">Live Top Focusers</span>
         </div>
-        
+    
         <div id="leaderboardList" style="display: flex; flex-direction: column; gap: 10px;">
           <p style="color: var(--subtext); text-align: center; font-style: italic;">Sign in to view and join the global leaderboard!</p>
         </div>
-      </div>
-      <div class="stats-grid">
-        <div class="stat-card card">
-          <span class="badge">Today</span>
-          <h3 style="font-size: 2.5rem; color: var(--accent);"><span id="todayFocusTime">0</span> <small style="font-size: 1rem;">mins</small></h3>
-          <div class="progress-bar-bg"><div id="todayProgress" class="progress-bar-fill" style="width: 0%;"></div></div>
-        </div>
-        <div class="stat-card card">
-          <span class="badge">This Week</span>
-          <h3 style="font-size: 2.5rem; color: var(--accent);"><span id="weeklyFocusTime">0</span> <small style="font-size: 1rem;">mins</small></h3>
-          <div class="progress-bar-bg"><div id="weeklyProgress" class="progress-bar-fill" style="width: 0%;"></div></div>
-        </div>
-        <div class="stat-card card">
-          <span class="badge">This Month</span>
-          <h3 style="font-size: 2.5rem; color: var(--accent);"><span id="monthlyFocusTime">0</span> <small style="font-size: 1rem;">hrs</small></h3>
-          <div class="progress-bar-bg"><div id="monthlyProgress" class="progress-bar-fill" style="width: 0%;"></div></div>
-        </div>
-      </div>
-
-      <div style="text-align: center; margin-top: 12px;">
-        <button onclick="resetStats()" class="pill-btn danger">Reset Stats Data</button>
       </div>
     </section>
 

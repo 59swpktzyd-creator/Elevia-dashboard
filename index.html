@@ -265,7 +265,6 @@
     </div>
   </div>
 
-  <!-- JAVASCRIPT LOGIC -->
   <script>
     // --- 1. ROUTING & SETUP ---
     function handleRouting() {
@@ -555,49 +554,48 @@
       }
     }
 
-    
     // --- 5. LIVE FLIP CLOCK (WITH 12H / 24H TOGGLE) ---
     let is12HourFormat = localStorage.getItem('is12HourFormat') === 'true';
 
     function toggleClockFormat() {
-    is12HourFormat = !is12HourFormat;
-    localStorage.setItem('is12HourFormat', is12HourFormat);
-    updateLiveClock();
+      is12HourFormat = !is12HourFormat;
+      localStorage.setItem('is12HourFormat', is12HourFormat);
+      updateLiveClock();
     }
 
     function updateLiveClock() {
-    const now = new Date();
-    let hours = now.getHours();
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
-    
-    const hEl = document.getElementById('flipHours');
-    const mEl = document.getElementById('flipMinutes');
-    const sEl = document.getElementById('flipSeconds');
-    const amPmEl = document.getElementById('flipAmPm');
+      const now = new Date();
+      let hours = now.getHours();
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      
+      const hEl = document.getElementById('flipHours');
+      const mEl = document.getElementById('flipMinutes');
+      const sEl = document.getElementById('flipSeconds');
+      const amPmEl = document.getElementById('flipAmPm');
 
-    if (is12HourFormat) {
+      if (is12HourFormat) {
         const ampm = hours >= 12 ? 'PM' : 'AM';
         hours = hours % 12;
-        hours = hours ? hours : 12; // convert 0 to 12
+        hours = hours ? hours : 12;
         
         if (hEl) hEl.textContent = String(hours).padStart(2, '0');
         if (amPmEl) {
-        amPmEl.textContent = ampm;
-        amPmEl.style.display = 'inline-block';
+          amPmEl.textContent = ampm;
+          amPmEl.style.display = 'inline-block';
         }
-    } else {
+      } else {
         if (hEl) hEl.textContent = String(hours).padStart(2, '0');
         if (amPmEl) amPmEl.style.display = 'none';
-    }
+      }
 
-    if (mEl) mEl.textContent = minutes;
-    if (sEl) sEl.textContent = seconds;
+      if (mEl) mEl.textContent = minutes;
+      if (sEl) sEl.textContent = seconds;
     }
 
     function startLiveClock() {
-    updateLiveClock();
-    setInterval(updateLiveClock, 1000);
+      updateLiveClock();
+      setInterval(updateLiveClock, 1000);
     }
 
     // --- 6. FOCUS TIMER WITH FOREST WITHER & REVIVE ---
@@ -650,7 +648,6 @@
           userPoints += earned;
           updatePointsDisplay();
 
-          // Forest reward & Plant Revival
           const currentPlant = PLANT_CATALOG.find(p => p.id === activePlantId) || PLANT_CATALOG[0];
           forest.push(currentPlant.icon);
           localStorage.setItem('forestGarden', JSON.stringify(forest));
@@ -765,36 +762,34 @@
       const el = document.getElementById('quoteBanner');
       if (el) el.textContent = quotes[Math.floor(Math.random() * quotes.length)];
     }
-
-  
   </script>
+
   <!-- SVG Filter for Liquid Distortion Effect -->
-<svg style="display: none;">
-  <defs>
-    <filter id="liquid-distortion">
-      <feTurbulence type="fractalNoise" baseFrequency="0.015 0.015" numOctaves="2" result="noise" seed="1">
-        <animate attributeName="baseFrequency" dur="10s" values="0.015 0.015;0.025 0.015;0.015 0.025;0.015 0.015" repeatCount="indefinite"/>
-      </feTurbulence>
-      <feDisplacementMap in="SourceGraphic" in2="noise" scale="18" xChannelSelector="R" yChannelSelector="G"/>
-    </filter>
-  </defs>
-</svg>
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+  <svg style="display: none;">
+    <defs>
+      <filter id="liquid-distortion">
+        <feTurbulence type="fractalNoise" baseFrequency="0.015 0.015" numOctaves="2" result="noise" seed="1">
+          <animate attributeName="baseFrequency" dur="10s" values="0.015 0.015;0.025 0.015;0.015 0.025;0.015 0.015" repeatCount="indefinite"/>
+        </feTurbulence>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="18" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+    </defs>
+  </svg>
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyBM3L-boIhYzyKXAErZNBAF3dzNFOQIqY0",
-  authDomain: "elevia-cd0e2.firebaseapp.com",
-  projectId: "elevia-cd0e2",
-  storageBucket: "elevia-cd0e2.firebasestorage.app",
-  messagingSenderId: "154864319234",
-  appId: "1:154864319234:web:d5099e8d99224a9daf201b"
-};
+  <!-- Firebase Integration Script -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+    const firebaseConfig = {
+      apiKey: "AIzaSyBM3L-boIhYzyKXAErZNBAF3dzNFOQIqY0",
+      authDomain: "elevia-cd0e2.firebaseapp.com",
+      projectId: "elevia-cd0e2",
+      storageBucket: "elevia-cd0e2.firebasestorage.app",
+      messagingSenderId: "154864319234",
+      appId: "1:154864319234:web:d5099e8d99224a9daf201b"
+    };
+
+    const app = initializeApp(firebaseConfig);
+  </script>
 </body>
 </html>

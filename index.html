@@ -1065,6 +1065,15 @@
 
       const html = rows.join('');
       leaderboardEls.forEach(el => { el.innerHTML = html; });
+    }, (error) => {
+      // Without this, a failed read (almost always Firestore security
+      // rules blocking it) failed completely silently — the placeholder
+      // text just sat there forever with no error visible anywhere on
+      // the page, only in the browser console.
+      console.error("Leaderboard read failed:", error.code, error.message);
+      leaderboardEls.forEach(el => {
+        el.innerHTML = `<p style="color: var(--danger); text-align: center; font-size: 0.85rem;">Couldn't load the leaderboard (${error.code || 'error'}). Check your Firestore security rules or console for details.</p>`;
+      });
     });
   }
 </script>

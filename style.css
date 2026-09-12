@@ -1,11 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Work+Sans:wght@400;500;600;700&display=swap');
 
-/* ============================================================
-   ELEVIA — "Greenhouse" theme
-   A focus/habit app built around a growing plant, so the palette
-   and type lean into soil, leaf and morning-light tones instead
-   of a generic SaaS violet-glass look.
-   ============================================================ */
 
 :root {
   --bg: #EFEAD9;          /* unbleached paper / soil-light */

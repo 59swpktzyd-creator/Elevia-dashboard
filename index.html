@@ -243,7 +243,7 @@
     </section>
 
     <!-- PAGE 4: STATS & ANALYTICS -->
-    <section id="page-stats" class="page-section">
+    <section id="page-stats" class="page">
       <div class="card" style="text-align: center; margin-bottom: 24px;">
         <h2 class="cute-title" style="font-size: 2rem;">Focus Analytics</h2>
         <p style="color: var(--subtext);">Track your personal consistency and progress milestones.</p>
@@ -276,18 +276,6 @@
 
     <button onclick="resetStats()" class="delete-ghost" style="margin-top: 20px; font-size: 0.85rem;">Reset Stats Data</button>
   </div>
-
-  <!-- LEADERBOARD CARD -->
-      <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h3 class="cute-title" style="font-size: 1.4rem;">🏆 Global Community Leaderboard</h3>
-          <span class="badge">Live Top Focusers</span>
-        </div>
-    
-        <div id="leaderboardListStats" class="leaderboard-target" style="display: flex; flex-direction: column; gap: 10px;">
-          <p class="leaderboard-empty-msg" style="color: var(--subtext); text-align: center; font-style: italic;">Sign in to view and join the global leaderboard!</p>
-        </div>
-      </div>
     </section>
 
   </main>
@@ -412,7 +400,17 @@
       const el = document.getElementById('userPointsDisplay');
       if (el) el.textContent = userPoints;
       localStorage.setItem('userPoints', userPoints);
+      if (typeof window.saveProgressToCloud === 'function') window.saveProgressToCloud();
     }
+
+    // Bridge for the Firebase module (which has its own isolated scope and
+    // can't touch this script's `userPoints` variable directly). Cloud sync
+    // calls this instead of setting `window.userPoints`, which used to get
+    // silently overwritten by the next updatePointsDisplay() call.
+    window.setUserPointsFromCloud = function(points) {
+      userPoints = points;
+      updatePointsDisplay();
+    };
 
     function renderPlant() {
       const current = PLANT_CATALOG.find(p => p.id === activePlantId) || PLANT_CATALOG[0];
@@ -681,17 +679,46 @@
       }
     }
 
+    // --- SEED-TO-PLANT GROWTH DURING A FOCUS SESSION ---
+    // Shows the focus-page companion growing from a seed as the session
+    // progresses, instead of just sitting at its fully-grown icon the
+    // whole time.
+    function updateFocusPlantGrowth() {
+      const focusIconEl = document.getElementById('focusPlantDisplay');
+      const focusStatusEl = document.getElementById('focusPlantStatus');
+      if (!focusIconEl || !isRunning) return;
+
+      const totalSeconds = selectedMinutes * 60;
+      const elapsed = Math.max(0, totalSeconds - remaining);
+      const pct = totalSeconds > 0 ? elapsed / totalSeconds : 0;
+      const current = PLANT_CATALOG.find(p => p.id === activePlantId) || PLANT_CATALOG[0];
+
+      if (pct < 0.2) {
+        focusIconEl.textContent = '🌰';
+        if (focusStatusEl) focusStatusEl.textContent = 'A tiny seed, just planted...';
+      } else if (pct < 0.5) {
+        focusIconEl.textContent = '🌱';
+        if (focusStatusEl) focusStatusEl.textContent = 'Sprouting! Keep going...';
+      } else if (pct < 0.85) {
+        focusIconEl.textContent = '🌿';
+        if (focusStatusEl) focusStatusEl.textContent = 'Growing steadily...';
+      } else {
+        focusIconEl.textContent = current.icon;
+        if (focusStatusEl) focusStatusEl.textContent = 'Almost fully grown!';
+      }
+    }
+
     function startTimer() {
       const btn = document.getElementById('startTimerBtn');
       isRunning = true;
       if (btn) btn.textContent = 'Pause Focus';
-      
-      const focusStatus = document.getElementById('focusPlantStatus');
-      if (focusStatus) focusStatus.textContent = "Focusing... Don't give up!";
+
+      updateFocusPlantGrowth(); // show the seed right away, don't wait a tick
 
       timer = setInterval(() => {
         remaining--;
         updateClockDisplay();
+        updateFocusPlantGrowth();
         if (remaining <= 0) {
           clearInterval(timer);
           
@@ -826,7 +853,8 @@
     GoogleAuthProvider, 
     signInWithPopup, 
     signOut, 
-    onAuthStateChanged 
+    onAuthStateChanged,
+    updateProfile
   } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
   import { 
     getFirestore, 
@@ -860,11 +888,44 @@
   // --- AUTHENTICATION LISTENERS ---
   window.toggleAuthModal = () => {
     if (currentUser) {
-      if (confirm("Do you want to log out of Elevia?")) {
-        signOut(auth);
-      }
+      // Signed in: open the account panel (edit name/photo, or sign out)
+      // instead of immediately confirming logout — this is the "any other
+      // time" entry point for changing your profile.
+      const nameInput = document.getElementById('accountNameInput');
+      const photoInput = document.getElementById('accountPhotoInput');
+      if (nameInput) nameInput.value = currentUser.displayName || '';
+      if (photoInput) photoInput.value = currentUser.photoURL || '';
+      document.getElementById('accountModal')?.classList.toggle('active');
     } else {
       document.getElementById('authModal')?.classList.toggle('active');
+    }
+  };
+
+  window.saveAccountChanges = async () => {
+    if (!currentUser) return;
+    const nameInput = document.getElementById('accountNameInput');
+    const photoInput = document.getElementById('accountPhotoInput');
+    const newName = (nameInput?.value || '').trim() || 'Anonymous Sprout';
+    const newPhoto = (photoInput?.value || '').trim();
+
+    try {
+      await updateProfile(currentUser, {
+        displayName: newName,
+        photoURL: newPhoto || null
+      });
+      renderAccountButton(currentUser);
+      await window.saveProgressToCloud();
+      document.getElementById('accountModal')?.classList.remove('active');
+    } catch (error) {
+      console.error("Profile update error:", error);
+      alert("Could not update your profile. Please try again.");
+    }
+  };
+
+  window.handleSignOut = () => {
+    if (confirm("Sign out of Elevia?")) {
+      document.getElementById('accountModal')?.classList.remove('active');
+      signOut(auth);
     }
   };
 
@@ -881,25 +942,44 @@
 
   // Handle Auth State Changes
   onAuthStateChanged(auth, async (user) => {
-    const authBtn = document.getElementById('authBtn');
     currentUser = user;
+    renderAccountButton(user);
 
     const subtitle = document.getElementById('leaderboardSubtitle');
 
     if (user) {
-      if (authBtn) authBtn.textContent = `👤 ${user.displayName.split(' ')[0]}`;
       if (subtitle) subtitle.textContent = "You're on the board — keep focusing to climb the ranks!";
       await syncUserDataWithCloud(user);
       listenToLeaderboard();
     } else {
-      if (authBtn) authBtn.textContent = '🔑 Sign In';
       if (subtitle) subtitle.textContent = 'Sign in to view and join the global leaderboard!';
       // Reset every leaderboard container back to its signed-out placeholder
       document.querySelectorAll('.leaderboard-target').forEach(el => {
         el.innerHTML = '<p class="leaderboard-empty-msg" style="color: var(--subtext); text-align: center; font-style: italic;">Sign in to view and join the global leaderboard!</p>';
       });
+      // Stop listening to the leaderboard while signed out
+      if (leaderboardUnsubscribe) {
+        leaderboardUnsubscribe();
+        leaderboardUnsubscribe = null;
+      }
     }
   });
+
+  // Renders the nav-bar account button: avatar + first name when signed
+  // in, or the plain "Sign In" prompt when signed out.
+  function renderAccountButton(user) {
+    const authBtn = document.getElementById('authBtn');
+    if (!authBtn) return;
+    if (user) {
+      const firstName = (user.displayName || 'Sprout').split(' ')[0];
+      const avatar = user.photoURL
+        ? `<img src="${user.photoURL}" alt="" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:-4px;">`
+        : '👤';
+      authBtn.innerHTML = `${avatar} ${firstName}`;
+    } else {
+      authBtn.textContent = '🔑 Sign In';
+    }
+  }
 
   // --- SYNC USER DATA TO FIRESTORE ---
   async function syncUserDataWithCloud(user) {
@@ -907,11 +987,16 @@
     const userSnap = await getDoc(userRef);
 
     if (userSnap.exists()) {
-      // Load saved cloud data into local variables
+      // Load saved cloud data into local variables. This goes through the
+      // window.setUserPointsFromCloud bridge (defined in the main script)
+      // instead of setting window.userPoints directly — this module has its
+      // own isolated scope, so a plain `window.userPoints = ...` was never
+      // actually visible to the code that renders/persists points, and got
+      // silently clobbered the next time a point was earned or spent.
       const data = userSnap.data();
-      window.userPoints = data.points || 0;
-      localStorage.setItem('userPoints', window.userPoints);
-      if (typeof updatePointsDisplay === 'function') updatePointsDisplay();
+      if (typeof window.setUserPointsFromCloud === 'function') {
+        window.setUserPointsFromCloud(data.points || 0);
+      }
     }
 
     // Save current local progress to Firebase
@@ -934,18 +1019,22 @@
   };
 
   // --- LIVE LEADERBOARD LISTENERS ---
+  let leaderboardUnsubscribe = null;
+
   function listenToLeaderboard() {
-    // NOTE: there are TWO leaderboard containers in the page (Home + Stats),
-    // both sharing the .leaderboard-target class. The old code only looked
-    // up a single id, so whichever container wasn't first in the DOM never
-    // got filled in and was stuck showing "Sign in to view...". We now
-    // render into all of them.
+    // Avoid stacking up a new realtime listener every time someone signs
+    // in/out/in again — the old code never cleaned up the previous one.
+    if (leaderboardUnsubscribe) {
+      leaderboardUnsubscribe();
+      leaderboardUnsubscribe = null;
+    }
+
     const leaderboardEls = document.querySelectorAll('.leaderboard-target');
     if (!leaderboardEls.length) return;
 
     const q = query(collection(db, "users"), orderBy("totalFocusMinutes", "desc"), limit(5));
 
-    onSnapshot(q, (snapshot) => {
+    leaderboardUnsubscribe = onSnapshot(q, (snapshot) => {
       const rows = [];
 
       if (snapshot.empty) {
@@ -996,6 +1085,32 @@
       </button>
     </div>
   </div>
+
+  <!-- ACCOUNT MODAL (edit name/photo, sign out) -->
+  <div id="accountModal" class="shop-modal">
+    <div class="shop-content" style="max-width: 360px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 class="cute-title" style="font-size: 1.5rem;">Your Account</h3>
+        <button onclick="document.getElementById('accountModal').classList.remove('active')" class="delete-ghost">✕</button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 14px; text-align: left;">
+        <label style="font-size: 0.8rem; font-weight: 600; color: var(--subtext);">
+          Display name
+          <input type="text" id="accountNameInput" placeholder="Your name" style="width: 100%; margin-top: 6px; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 0.95rem;">
+        </label>
+        <label style="font-size: 0.8rem; font-weight: 600; color: var(--subtext);">
+          Profile picture URL
+          <input type="text" id="accountPhotoInput" placeholder="https://..." style="width: 100%; margin-top: 6px; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 0.95rem;">
+        </label>
+        <p style="font-size: 0.78rem; color: var(--subtext); margin: 0;">Paste a link to any image — it'll show next to your name and on the leaderboard. Leave blank to use the default icon.</p>
+      </div>
+
+      <button onclick="saveAccountChanges()" class="pill-btn primary" style="width: 100%; padding: 11px; margin-top: 18px;">Save Changes</button>
+      <button onclick="handleSignOut()" class="pill-btn danger" style="width: 100%; padding: 11px; margin-top: 10px;">Sign Out</button>
+    </div>
+  </div>
+
   <script>
     lucide.createIcons();
   </script>

@@ -1,29 +1,42 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Quicksand:wght@600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Work+Sans:wght@400;500;600;700&display=swap');
 
-/* --- COLOR PALETTE (Cozy Soft Violet) --- */
+/* ============================================================
+   ELEVIA — "Greenhouse" theme
+   A focus/habit app built around a growing plant, so the palette
+   and type lean into soil, leaf and morning-light tones instead
+   of a generic SaaS violet-glass look.
+   ============================================================ */
+
 :root {
-  --bg: #f8f6fc;
-  --card: #ffffff;
-  --text: #231f30;
-  --subtext: #787291;
-  --accent: #7c3aed; /* Deep Rich Violet */
-  --accent-hover: #6d28d9;
-  --accent-light: #f3e8ff;
-  --border: #e9e3f5;
-  --danger: #ef4444;
-  --radius: 20px;
+  --bg: #EFEAD9;          /* unbleached paper / soil-light */
+  --card: #FBF8EE;        /* warm ivory surface */
+  --text: #22301E;        /* deep forest ink */
+  --subtext: #6E7563;     /* muted moss grey-green */
+  --accent: #4B7F52;      /* leaf green */
+  --accent-hover: #3D6B44;
+  --accent-light: #DEE8D3;
+  --gold: #B98A2E;        /* sunlight amber — points, streaks */
+  --gold-light: #F1E3C2;
+  --border: #DCD3B9;      /* warm sand */
+  --danger: #A8472E;      /* muted clay red */
+  --danger-light: #F3DFD6;
+  --radius-soft: 10px;
+  --radius-organic: 42px 14px 42px 14px;
 }
 
 body.dark-theme {
-  --bg: #0f0d17;
-  --card: #181524;
-  --text: #f3f1fa;
-  --subtext: #9790b8;
-  --accent: #a78bfa;
-  --accent-hover: #8b5cf6;
-  --accent-light: #261e38;
-  --border: #29243d;
-  --danger: #f87171;
+  --bg: #141C15;
+  --card: #1D2A1E;
+  --text: #EBE7D8;
+  --subtext: #97A08C;
+  --accent: #7FB579;
+  --accent-hover: #6BA164;
+  --accent-light: #263521;
+  --gold: #E0B75C;
+  --gold-light: #33291A;
+  --border: #2D3C2B;
+  --danger: #E27E5F;
+  --danger-light: #33231D;
 }
 
 /* --- GLOBAL BASE --- */
@@ -31,8 +44,8 @@ body.dark-theme {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
-  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  font-family: 'Work Sans', -apple-system, sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 body {
@@ -44,76 +57,24 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Typography Headings */
+/* Headings use the serif — it carries the "growth" personality
+   of the app without needing gradients or glass to feel distinct */
 .cute-title, .habit-item span, h1, h2, h3 {
-  font-family: 'Quicksand', sans-serif;
-  letter-spacing: -0.02em;
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  letter-spacing: -0.01em;
 }
 
-/* --- LIQUID GLASS EFFECTS --- */
-.liquid-glass-card {
-  background: rgba(255, 255, 255, 0.45);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  border-radius: var(--radius);
-  box-shadow: 
-    0 12px 32px rgba(35, 31, 48, 0.04),
-    inset 0 1px 1px rgba(255, 255, 255, 0.8);
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-body.dark-theme .liquid-glass-card {
-  background: rgba(24, 21, 36, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 
-    0 12px 32px rgba(0, 0, 0, 0.3),
-    inset 0 1px 1px rgba(255, 255, 255, 0.12);
-}
-
-/* Logo Effect */
-.liquid-logo {
-  font-size: 1.5rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  background: linear-gradient(135deg, var(--accent), #a78bfa, #f472b6);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  display: inline-block;
-  cursor: pointer;
-  transition: filter 0.3s ease, transform 0.2s ease;
-}
-
-.liquid-logo:hover,
-.liquid-glass-card:hover {
-  filter: url(#liquid-distortion);
-  transform: translateY(-2px);
-}
-
-/* Glass Reflection Highlight */
-.liquid-glass-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -150%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.25),
-    transparent
-  );
-  transform: skewX(-25deg);
-  transition: left 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-  pointer-events: none;
-}
-
-.liquid-glass-card:hover::before {
-  left: 150%;
+/* --- BRAND WORDMARK (replaces the old rainbow-gradient logo) --- */
+.brand-wordmark {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.4rem;
+  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 /* --- CONTAINER --- */
@@ -132,32 +93,33 @@ body.dark-theme .liquid-glass-card {
   position: sticky;
   top: 0;
   z-index: 50;
-  padding: 12px 28px;
+  padding: 14px 28px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
 }
 
+/* Text-link nav instead of the segmented pill-nav default —
+   an underline communicates "current page" without a pill shape
+   being reused for every clickable thing on the page. */
 .nav-links {
   display: flex;
-  gap: 6px;
-  background: var(--bg);
-  padding: 4px;
-  border-radius: 9999px;
-  border: 1px solid var(--border);
+  gap: 22px;
 }
 
 .nav-item {
   background: transparent;
   border: none;
+  border-bottom: 2px solid transparent;
   color: var(--subtext);
-  font-size: 0.85rem;
+  font-family: 'Work Sans', sans-serif;
+  font-size: 0.88rem;
   font-weight: 600;
-  padding: 8px 18px;
-  border-radius: 9999px;
+  padding: 4px 2px;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .nav-item:hover {
@@ -165,89 +127,86 @@ body.dark-theme .liquid-glass-card {
 }
 
 .nav-item.active {
-  background: var(--card);
   color: var(--accent);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border-bottom-color: var(--accent);
 }
 
 /* --- PAGE TRANSITIONS --- */
 .page {
   display: none;
-  opacity: 0;
-  transform: translateY(8px);
-  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .page.active-page {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  opacity: 1;
-  transform: translateY(0);
 }
 
-/* --- CARDS & BADGES --- */
+/* --- CARDS & BADGES ---
+   Flat, quiet, thin-bordered — the plant-card below is the one
+   place that gets a bolder, organic shape; everything else stays
+   calm so that element reads as the focal point. */
 .card, .stat-card {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 28px;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03);
+  border-radius: var(--radius-soft);
+  padding: 26px;
 }
 
 .badge {
-  display: inline-block;
-  background: var(--accent-light);
-  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--subtext);
   font-size: 0.72rem;
-  font-weight: 700;
-  padding: 5px 12px;
-  border-radius: 9999px;
-  letter-spacing: 0.02em;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
 }
 
 .streak-badge {
-  background: var(--accent-light);
-  color: var(--accent);
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  background: var(--gold-light);
+  color: var(--gold);
+  border: 1px solid var(--gold-light);
+  border-radius: 8px;
   padding: 6px 14px;
   font-weight: 700;
   font-size: 0.85rem;
 }
 
-/* --- BUTTONS --- */
+/* --- BUTTONS ---
+   Only true tags/status chips are pill-shaped now. Buttons get a
+   plain rounded rectangle so "pill" keeps one consistent meaning
+   in the UI instead of being the default for every control. */
 .pill-btn {
   background: var(--card);
   color: var(--text);
   border: 1px solid var(--border);
-  padding: 9px 20px;
-  border-radius: 9999px;
+  padding: 9px 18px;
+  border-radius: var(--radius-soft);
   font-weight: 600;
   font-size: 0.88rem;
+  font-family: 'Work Sans', sans-serif;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .pill-btn:hover {
-  transform: translateY(-1px);
-  border-color: var(--subtext);
+  border-color: var(--accent);
 }
 
 .pill-btn:active {
-  transform: scale(0.97);
+  transform: scale(0.98);
 }
 
 .pill-btn.primary {
   background: var(--accent);
   color: #ffffff;
   border: none;
-  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.25);
 }
 
 .pill-btn.primary:hover {
   background: var(--accent-hover);
-  box-shadow: 0 6px 18px rgba(124, 58, 237, 0.35);
 }
 
 .pill-btn.ghost {
@@ -257,22 +216,19 @@ body.dark-theme .liquid-glass-card {
 }
 
 .pill-btn.danger {
-  background: #fef2f2;
-  color: #ef4444;
+  background: var(--danger-light);
+  color: var(--danger);
   border: none;
 }
 
-body.dark-theme .pill-btn.danger {
-  background: #2a1717;
-  color: #f87171;
-}
-
-/* --- PLANT COMPANION CARD --- */
+/* --- PLANT COMPANION CARD (the one bold, distinctive shape) --- */
 .plant-card {
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
+  border-radius: var(--radius-organic);
+  border-color: var(--accent-light);
 }
 
 .plant-avatar {
@@ -289,7 +245,7 @@ body.dark-theme .pill-btn.danger {
 
 .progress-bar-bg {
   background: var(--border);
-  height: 10px;
+  height: 8px;
   border-radius: 9999px;
   overflow: hidden;
   width: 100%;
@@ -299,11 +255,11 @@ body.dark-theme .pill-btn.danger {
 .progress-bar-fill {
   height: 100%;
   border-radius: 9999px;
-  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: width 0.4s ease;
   background: var(--accent);
   color: white;
-  font-size: 0.65rem;
-  font-weight: 800;
+  font-size: 0.62rem;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -321,7 +277,7 @@ body.dark-theme .pill-btn.danger {
   gap: 8px;
   background: var(--bg);
   padding: 6px 8px;
-  border-radius: 9999px;
+  border-radius: var(--radius-soft);
   border: 1px solid var(--border);
 }
 
@@ -332,7 +288,7 @@ body.dark-theme .pill-btn.danger {
   background: transparent;
   color: var(--text);
   outline: none;
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: 'Work Sans', sans-serif;
   font-size: 0.95rem;
 }
 
@@ -341,7 +297,7 @@ body.dark-theme .pill-btn.danger {
   margin-top: 16px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .habit-item {
@@ -350,8 +306,8 @@ body.dark-theme .pill-btn.danger {
   align-items: center;
   background: var(--card);
   border: 1px solid var(--border);
-  padding: 14px 20px;
-  border-radius: 16px;
+  padding: 14px 18px;
+  border-radius: var(--radius-soft);
   font-size: 0.95rem;
 }
 
@@ -361,7 +317,6 @@ body.dark-theme .pill-btn.danger {
   color: var(--subtext);
   font-size: 1.1rem;
   cursor: pointer;
-  transition: color 0.2s ease;
 }
 
 .delete-ghost:hover {
@@ -376,15 +331,14 @@ body.dark-theme .pill-btn.danger {
   background: var(--bg);
   border: 1px solid var(--border);
   color: var(--subtext);
-  width: 36px;
-  height: 36px;
-  border-radius: 9999px;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-soft);
   cursor: pointer;
   z-index: 10;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
 }
 
 .fullscreen-icon:hover {
@@ -392,15 +346,17 @@ body.dark-theme .pill-btn.danger {
   border-color: var(--subtext);
 }
 
+/* The serif in italic gives the countdown a hand-noted,
+   garden-journal feel instead of a generic tabular-mono readout */
 .clock-display {
-  font-size: 4.8rem;
-  font-weight: 700;
+  font-size: 4.6rem;
+  font-weight: 500;
   text-align: center;
   margin: 20px 0;
   font-variant-numeric: tabular-nums;
-  font-family: 'Quicksand', sans-serif;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
   color: var(--accent);
-  letter-spacing: -0.02em;
 }
 
 .timer-presets {
@@ -420,13 +376,11 @@ body.dark-theme .pill-btn.danger {
   cursor: pointer;
   font-weight: 600;
   font-size: 0.85rem;
-  transition: all 0.2s ease;
 }
 
 .preset-pill.active, .preset-pill:hover {
-  background: var(--card);
+  border-color: var(--accent);
   color: var(--text);
-  border-color: var(--subtext);
 }
 
 .preset-pill.active {
@@ -439,27 +393,64 @@ body.dark-theme .pill-btn.danger {
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
+  gap: 14px;
 }
 
 .stat-card {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 20px;
+  padding: 18px;
+}
+
+/* --- LEADERBOARD ROWS --- */
+.leaderboard-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--bg);
+  border-radius: var(--radius-soft);
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+
+.leaderboard-row-who {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.leaderboard-rank {
+  font-weight: 700;
+  font-size: 1.05rem;
+  width: 24px;
+}
+
+.leaderboard-name {
+  font-weight: 600;
+}
+
+.leaderboard-row-stats {
+  display: flex;
+  gap: 16px;
+  font-size: 0.85rem;
+  color: var(--subtext);
+}
+
+.leaderboard-empty-msg {
+  padding: 4px 0;
 }
 
 /* --- SHOP & AUTH MODAL --- */
 .shop-modal {
   display: none;
   position: fixed;
-  top: 0; 
-  left: 0; 
-  width: 100%; 
+  top: 0;
+  left: 0;
+  width: 100%;
   height: 100%;
-  background: rgba(15, 13, 23, 0.4);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(20, 24, 18, 0.45);
   z-index: 1000;
   align-items: center;
   justify-content: center;
@@ -473,14 +464,13 @@ body.dark-theme .pill-btn.danger {
 .shop-content {
   background: var(--card);
   color: var(--text);
-  padding: 28px;
-  border-radius: 24px;
+  padding: 26px;
+  border-radius: 16px;
   max-width: 440px;
   width: 100%;
   max-height: 85vh;
   overflow-y: auto;
   border: 1px solid var(--border);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
 }
 
 .shop-grid {
@@ -494,7 +484,7 @@ body.dark-theme .pill-btn.danger {
   border: 1px solid var(--border);
   background: var(--bg);
   padding: 14px;
-  border-radius: 16px;
+  border-radius: var(--radius-soft);
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -514,59 +504,46 @@ body.dark-theme .pill-btn.danger {
   100% { transform: scale(0.85) rotate(-5deg); opacity: 0.7; }
 }
 
-/* Stop Button Styling */
-#stop-btn {
-  background: var(--danger);
-  color: white;
-  border: none;
-}
-
-#stop-btn:hover {
-  opacity: 0.9;
-}
 /* --- MOBILE RESPONSIVE OVERRIDES --- */
 @media (max-width: 600px) {
-  /* Prevent horizontal screen scrolling */
   html, body {
     overflow-x: hidden;
     width: 100%;
   }
 
-  /* Compact Navbar for mobile screens */
   .navbar {
     padding: 10px 14px;
     flex-wrap: wrap;
     gap: 10px;
   }
 
-  .nav-brand {
+  .brand-wordmark {
     font-size: 1.2rem;
   }
 
   .nav-links {
-    order: 3; /* Move navigation links below logo and user profile on mobile */
+    order: 3;
     width: 100%;
     justify-content: space-around;
-    padding: 3px;
+    gap: 10px;
   }
 
   .nav-item {
-    padding: 6px 12px;
     font-size: 0.8rem;
   }
 
-  /* Adjust Container padding */
   .container {
     padding: 16px 12px;
   }
 
-  /* Make Cards fit screen width without bursting margins */
   .card, .stat-card {
     padding: 18px 14px;
-    border-radius: 16px;
   }
 
-  /* Scale down massive timer clock on phones */
+  .plant-card {
+    border-radius: 28px 12px 28px 12px;
+  }
+
   .clock-display {
     font-size: 3.2rem;
     margin: 12px 0;
@@ -576,13 +553,11 @@ body.dark-theme .pill-btn.danger {
     font-size: 3.8rem;
   }
 
-  /* Stack stats grid cleanly on small displays */
   .stats-grid {
     grid-template-columns: 1fr;
     gap: 12px;
   }
 
-  /* Keep shop and auth modals fitting inside mobile viewports */
   .shop-content {
     padding: 20px 16px;
     border-radius: 18px;

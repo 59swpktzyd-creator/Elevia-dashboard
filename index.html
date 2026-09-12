@@ -29,7 +29,8 @@
       background: var(--card);
       color: var(--text);
       padding: 28px;
-      border-radius: 28px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
       max-width: 400px;
       width: 100%;
       text-align: center;
@@ -70,7 +71,7 @@
   <!-- NAVIGATION BAR -->
   <nav class="navbar">
     <div class="nav-brand">
-      <h2 class="liquid-logo">Elevia</h2>
+      <h2 class="brand-wordmark"><i data-lucide="sprout" style="width: 20px; height: 20px; vertical-align: -3px;"></i> Elevia</h2>
     </div>
     
     <div class="nav-links">
@@ -142,12 +143,13 @@
           <span class="badge">Live Top Focusers</span>
         </div>
         
-        <!-- Add id="leaderboardSubtitle" to this <p> tag -->
         <p id="leaderboardSubtitle" style="text-align: center; color: var(--subtext); margin: 12px 0; font-style: italic;">
           Sign in to view and join the global leaderboard!
         </p>
 
-        <div id="leaderboardList" style="margin-top: 16px;"></div>
+        <div id="leaderboardList" class="leaderboard-target" style="margin-top: 16px;">
+          <p class="leaderboard-empty-msg" style="color: var(--subtext); text-align: center; font-style: italic;">Sign in to view and join the global leaderboard!</p>
+        </div>
       </div>
       <!-- FOREST GARDEN CARD -->
       <div class="card">
@@ -282,8 +284,8 @@
           <span class="badge">Live Top Focusers</span>
         </div>
     
-        <div id="leaderboardList" style="display: flex; flex-direction: column; gap: 10px;">
-          <p style="color: var(--subtext); text-align: center; font-style: italic;">Sign in to view and join the global leaderboard!</p>
+        <div id="leaderboardListStats" class="leaderboard-target" style="display: flex; flex-direction: column; gap: 10px;">
+          <p class="leaderboard-empty-msg" style="color: var(--subtext); text-align: center; font-style: italic;">Sign in to view and join the global leaderboard!</p>
         </div>
       </div>
     </section>
@@ -815,18 +817,6 @@
     }
   </script>
 
-  <!-- SVG Filter for Liquid Distortion Effect -->
-  <svg style="display: none;">
-    <defs>
-      <filter id="liquid-distortion">
-        <feTurbulence type="fractalNoise" baseFrequency="0.015 0.015" numOctaves="2" result="noise" seed="1">
-          <animate attributeName="baseFrequency" dur="10s" values="0.015 0.015;0.025 0.015;0.015 0.025;0.015 0.015" repeatCount="indefinite"/>
-        </feTurbulence>
-        <feDisplacementMap in="SourceGraphic" in2="noise" scale="18" xChannelSelector="R" yChannelSelector="G"/>
-      </filter>
-    </defs>
-  </svg>
-
   <!-- Firebase Integration Script -->
   <!-- Firebase Integration Script (Auth & Leaderboard) -->
 <script type="module">
@@ -894,12 +884,20 @@
     const authBtn = document.getElementById('authBtn');
     currentUser = user;
 
+    const subtitle = document.getElementById('leaderboardSubtitle');
+
     if (user) {
       if (authBtn) authBtn.textContent = `👤 ${user.displayName.split(' ')[0]}`;
+      if (subtitle) subtitle.textContent = "You're on the board — keep focusing to climb the ranks!";
       await syncUserDataWithCloud(user);
       listenToLeaderboard();
     } else {
       if (authBtn) authBtn.textContent = '🔑 Sign In';
+      if (subtitle) subtitle.textContent = 'Sign in to view and join the global leaderboard!';
+      // Reset every leaderboard container back to its signed-out placeholder
+      document.querySelectorAll('.leaderboard-target').forEach(el => {
+        el.innerHTML = '<p class="leaderboard-empty-msg" style="color: var(--subtext); text-align: center; font-style: italic;">Sign in to view and join the global leaderboard!</p>';
+      });
     }
   });
 
@@ -937,41 +935,47 @@
 
   // --- LIVE LEADERBOARD LISTENERS ---
   function listenToLeaderboard() {
-    const leaderboardEl = document.getElementById('leaderboardList');
-    if (!leaderboardEl) return;
+    // NOTE: there are TWO leaderboard containers in the page (Home + Stats),
+    // both sharing the .leaderboard-target class. The old code only looked
+    // up a single id, so whichever container wasn't first in the DOM never
+    // got filled in and was stuck showing "Sign in to view...". We now
+    // render into all of them.
+    const leaderboardEls = document.querySelectorAll('.leaderboard-target');
+    if (!leaderboardEls.length) return;
 
     const q = query(collection(db, "users"), orderBy("totalFocusMinutes", "desc"), limit(5));
 
     onSnapshot(q, (snapshot) => {
-      leaderboardEl.innerHTML = '';
-      let rank = 1;
+      const rows = [];
 
       if (snapshot.empty) {
-        leaderboardEl.innerHTML = `<p style="color: var(--subtext); text-align: center;">No rankings yet! Complete focus sessions to be #1.</p>`;
+        leaderboardEls.forEach(el => {
+          el.innerHTML = `<p style="color: var(--subtext); text-align: center;">No rankings yet! Complete focus sessions to be #1.</p>`;
+        });
         return;
       }
 
+      let rank = 1;
       snapshot.forEach((doc) => {
         const u = doc.data();
-        const row = document.createElement('div');
-        row.style.cssText = "display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: var(--bg); border-radius: 16px; border: 1px solid var(--border);";
-        
         const rankMedal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
-
-        row.innerHTML = `
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <span style="font-weight: 700; font-size: 1.1rem; width: 24px;">${rankMedal}</span>
-            <span style="font-weight: 600;">${u.displayName}</span>
+        rows.push(`
+          <div class="leaderboard-row">
+            <div class="leaderboard-row-who">
+              <span class="leaderboard-rank">${rankMedal}</span>
+              <span class="leaderboard-name">${u.displayName}</span>
+            </div>
+            <div class="leaderboard-row-stats">
+              <span>⏱️ <strong>${u.totalFocusMinutes || 0}</strong> mins</span>
+              <span>🪙 <strong>${u.points || 0}</strong> pts</span>
+            </div>
           </div>
-          <div style="display: flex; gap: 16px; font-size: 0.88rem;">
-            <span>⏱️ <strong>${u.totalFocusMinutes || 0}</strong> mins</span>
-            <span>🪙 <strong>${u.points || 0}</strong> pts</span>
-          </div>
-        `;
-
-        leaderboardEl.appendChild(row);
+        `);
         rank++;
       });
+
+      const html = rows.join('');
+      leaderboardEls.forEach(el => { el.innerHTML = html; });
     });
   }
 </script>

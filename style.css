@@ -576,3 +576,9 @@ body[data-theme="night"] .progress-bar-fill, body[data-theme="midnight"] .progre
 .theme-swatch { cursor: pointer; color: var(--text); border-width: 2px; }
 .theme-swatch:hover { border-color: var(--subtext); }
 .theme-swatch.sel { border-color: var(--accent); }
+
+body[data-theme="amethyst"] { --bg:#150E24; --card:#20163A; --text:#EDE6FA; --subtext:#A596C4; --accent:#B48CFF; --accent-hover:#A075F5; --accent-light:#2E2050; --gold:#E8C26A; --gold-light:#332A1E; --border:#33254F; --danger:#F0887A; --danger-light:#3A2126; }
+body[data-theme="deepsea"] { --bg:#06121F; --card:#0C2036; --text:#E3F0FB; --subtext:#88A4BD; --accent:#4DB2FF; --accent-hover:#36A0F0; --accent-light:#12324F; --gold:#E6C068; --gold-light:#2B2A1C; --border:#173653; --danger:#F08A78; --danger-light:#331F22; }
+body[data-theme="amethyst"] .pill-btn.primary, body[data-theme="deepsea"] .pill-btn.primary,
+body[data-theme="amethyst"] .preset-pill.active, body[data-theme="deepsea"] .preset-pill.active,
+body[data-theme="amethyst"] .progress-bar-fill, body[data-theme="deepsea"] .progress-bar-fill { color: var(--bg); }

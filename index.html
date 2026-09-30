@@ -739,6 +739,21 @@
       ticker = null;
     }
 
+    // Keeps the screen/PC awake while a session is running (Screen Wake Lock API).
+    let wakeLock = null;
+    async function requestWake() {
+      try {
+        if ('wakeLock' in navigator && !wakeLock && isRunning && !isPaused) {
+          wakeLock = await navigator.wakeLock.request('screen');
+          wakeLock.addEventListener('release', () => { wakeLock = null; });
+        }
+      } catch (e) { wakeLock = null; }
+    }
+    function releaseWake() {
+      try { wakeLock?.release(); } catch (e) {}
+      wakeLock = null;
+    }
+
     function saveSession() {
       if (!isRunning) localStorage.removeItem('focusSession');
       else localStorage.setItem('focusSession', JSON.stringify({ selectedMinutes, remaining, endTime, isPaused }));
@@ -792,7 +807,7 @@
     function startTimer() {
       isRunning = true; isPaused = false;
       endTime = Date.now() + remaining * 1000;
-      startTicker(); setBtn(); saveSession(); updateFocusPlantGrowth();
+      startTicker(); setBtn(); saveSession(); updateFocusPlantGrowth(); requestWake();
     }
 
     function pauseTimer() {
@@ -800,13 +815,13 @@
       if (!isRunning) return;
       stopTicker();
       isPaused = true; endTime = null;
-      setBtn(); saveSession(); updateClockDisplay(); updateFocusPlantGrowth();
+      setBtn(); saveSession(); updateClockDisplay(); updateFocusPlantGrowth(); releaseWake();
     }
 
     function resumeTimer() {
       isPaused = false;
       endTime = Date.now() + remaining * 1000;
-      startTicker(); setBtn(); saveSession(); updateFocusPlantGrowth();
+      startTicker(); setBtn(); saveSession(); updateFocusPlantGrowth(); requestWake();
     }
 
     function tick() {
@@ -851,7 +866,7 @@
     }
 
     function confirmStopTimer(didWither = true) {
-      stopTicker();
+      stopTicker(); releaseWake();
       isRunning = false; isPaused = false; endTime = null;
       saveSession();
       if (didWither) witherPlant();
@@ -875,11 +890,11 @@
       isRunning = true; isPaused = !!saved.isPaused; endTime = saved.endTime;
       document.querySelectorAll('.preset-pill').forEach(b => b.classList.toggle('active', b.textContent === `${selectedMinutes}m`));
       setBtn(); updateClockDisplay(); updateFocusPlantGrowth();
-      if (!isPaused) { startTicker(); tick(); }
+      if (!isPaused) { startTicker(); tick(); requestWake(); }
     }
 
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) { tick(); plantTick(); }
+      if (!document.hidden) { tick(); plantTick(); requestWake(); }
     });
 
     function playChime() {
@@ -955,7 +970,9 @@
       { id: 'sunset', name: 'Sunset', c: ['#FBEBDD', '#FFF6EC', '#D9693A'] },
       { id: 'lavender', name: 'Lavender', c: ['#ECE8F5', '#F8F6FC', '#7A62B8'] },
       { id: 'midnight', name: 'Midnight', c: ['#0E1424', '#161E33', '#7C9CFF'] },
-      { id: 'mocha', name: 'Mocha', c: ['#1C1612', '#261E18', '#D9A066'] }
+      { id: 'mocha', name: 'Mocha', c: ['#1C1612', '#261E18', '#D9A066'] },
+      { id: 'amethyst', name: 'Dark Purple', c: ['#150E24', '#20163A', '#B48CFF'] },
+      { id: 'deepsea', name: 'Dark Blue', c: ['#06121F', '#0C2036', '#4DB2FF'] }
     ];
 
     function applyTheme(id) {

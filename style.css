@@ -558,3 +558,21 @@ body {
     width: 95%;
   }
 }
+
+/* --- THEMES (chosen via the Theme button, saved in localStorage) --- */
+body[data-theme="night"] { --bg:#141C15; --card:#1D2A1E; --text:#EBE7D8; --subtext:#97A08C; --accent:#7FB579; --accent-hover:#6BA164; --accent-light:#263521; --gold:#E0B75C; --gold-light:#33291A; --border:#2D3C2B; --danger:#E27E5F; --danger-light:#33231D; }
+body[data-theme="sakura"] { --bg:#FBEFF1; --card:#FFF8F9; --text:#3D2530; --subtext:#86666F; --accent:#C9577F; --accent-hover:#B24570; --accent-light:#F7DCE5; --gold:#C98A4B; --gold-light:#F8E6D0; --border:#EBCFD6; --danger:#B5443A; --danger-light:#F6DCD8; }
+body[data-theme="ocean"] { --bg:#E6F1F4; --card:#F5FAFB; --text:#12303A; --subtext:#5B7882; --accent:#2C7A93; --accent-hover:#22647A; --accent-light:#D3E8EE; --gold:#B9852A; --gold-light:#F2E5C6; --border:#C4DBE2; --danger:#B5523A; --danger-light:#F4DED6; }
+body[data-theme="sunset"] { --bg:#FBEBDD; --card:#FFF6EC; --text:#40221A; --subtext:#8A6A5C; --accent:#C95A2C; --accent-hover:#B04D24; --accent-light:#F8DCC7; --gold:#B8862A; --gold-light:#F5E4BF; --border:#EAD0BA; --danger:#A93A35; --danger-light:#F5DAD5; }
+body[data-theme="lavender"] { --bg:#ECE8F5; --card:#F8F6FC; --text:#2A2440; --subtext:#70698C; --accent:#7A62B8; --accent-hover:#66509F; --accent-light:#DDD6EF; --gold:#B8892F; --gold-light:#F0E3C4; --border:#D6CEE8; --danger:#B04A52; --danger-light:#F4DCDD; }
+body[data-theme="midnight"] { --bg:#0E1424; --card:#161E33; --text:#E6EAF5; --subtext:#8D98B5; --accent:#7C9CFF; --accent-hover:#6687F0; --accent-light:#1F2B4A; --gold:#E6BE60; --gold-light:#2E2A1A; --border:#263352; --danger:#F08A78; --danger-light:#341F22; }
+body[data-theme="mocha"] { --bg:#1C1612; --card:#261E18; --text:#F0E6DA; --subtext:#A89886; --accent:#D9A066; --accent-hover:#C68E55; --accent-light:#3A2D22; --gold:#E6C170; --gold-light:#362B18; --border:#3A2E25; --danger:#E5826A; --danger-light:#3A2220; }
+
+/* light-accent dark themes need dark text on filled accents */
+body[data-theme="night"] .pill-btn.primary, body[data-theme="midnight"] .pill-btn.primary, body[data-theme="mocha"] .pill-btn.primary,
+body[data-theme="night"] .preset-pill.active, body[data-theme="midnight"] .preset-pill.active, body[data-theme="mocha"] .preset-pill.active,
+body[data-theme="night"] .progress-bar-fill, body[data-theme="midnight"] .progress-bar-fill, body[data-theme="mocha"] .progress-bar-fill { color: var(--bg); }
+
+.theme-swatch { cursor: pointer; color: var(--text); border-width: 2px; }
+.theme-swatch:hover { border-color: var(--subtext); }
+.theme-swatch.sel { border-color: var(--accent); }

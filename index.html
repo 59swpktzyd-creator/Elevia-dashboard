@@ -947,46 +947,76 @@
     }
 
     // --- 7. STATS ANALYTICS ---
+    // Focus time is stored per calendar day, so Today / This Week (Mon-Sun) / This Month are real, separate numbers.
+    const dayKey = d => d.toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
+
+    function loadFocusLog() {
+      let log = null;
+      try { log = JSON.parse(localStorage.getItem('focusLog')); } catch (e) {}
+      if (!log || typeof log !== 'object') {
+        // One-time migration of the old combined counters (best-effort split).
+        log = {};
+        const oldToday = Number(localStorage.getItem('todayFocus')) || 0;
+        const oldWeek = Number(localStorage.getItem('weeklyFocus')) || 0;
+        const y = new Date(); y.setDate(y.getDate() - 1);
+        if (oldToday) log[dayKey(new Date())] = oldToday;
+        if (oldWeek > oldToday) log[dayKey(y)] = oldWeek - oldToday;
+        localStorage.setItem('focusLog', JSON.stringify(log));
+      }
+      return log;
+    }
+
     function recordCompletedFocusTime(minutes) {
-      let today = Number(localStorage.getItem('todayFocus')) || 0;
-      let weekly = Number(localStorage.getItem('weeklyFocus')) || 0;
-
-      today += minutes;
-      weekly += minutes;
-
-      localStorage.setItem('todayFocus', today);
-      localStorage.setItem('weeklyFocus', weekly);
+      const log = loadFocusLog();
+      const k = dayKey(new Date());
+      log[k] = (log[k] || 0) + minutes;
+      localStorage.setItem('focusLog', JSON.stringify(log));
+      // all-time total (used by the leaderboard)
+      localStorage.setItem('weeklyFocus', (Number(localStorage.getItem('weeklyFocus')) || 0) + minutes);
 
       updateStatsDisplay();
-    
+
       if (typeof window.saveProgressToCloud === 'function') window.saveProgressToCloud();
     }
 
     function updateStatsDisplay() {
-      const today = Number(localStorage.getItem('todayFocus')) || 0;
-      const weekly = Number(localStorage.getItem('weeklyFocus')) || 0;
+      const log = loadFocusLog();
+      const now = new Date();
+      const todayK = dayKey(now);
+      const monday = new Date(now); monday.setHours(0, 0, 0, 0);
+      monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+      const mondayK = dayKey(monday);
+      const monthPrefix = todayK.slice(0, 7);
+
+      let today = 0, weekly = 0, monthly = 0;
+      for (const [k, v] of Object.entries(log)) {
+        if (k === todayK) today += v;
+        if (k >= mondayK && k <= todayK) weekly += v;
+        if (k.startsWith(monthPrefix)) monthly += v;
+      }
 
       const todayEl = document.getElementById('todayFocusTime');
       const weeklyEl = document.getElementById('weeklyFocusTime');
       const monthlyEl = document.getElementById('monthlyFocusTime');
-
       if (todayEl) todayEl.textContent = fmtHrs(today);
       if (weeklyEl) weeklyEl.textContent = fmtHrs(weekly);
-      if (monthlyEl) monthlyEl.textContent = fmtHrs(weekly);
+      if (monthlyEl) monthlyEl.textContent = fmtHrs(monthly);
 
-      const todayProg = document.getElementById('todayProgress');
-      const weeklyProg = document.getElementById('weeklyProgress');
-      const monthlyProg = document.getElementById('monthlyProgress');
-
-      if (todayProg) todayProg.style.width = `${Math.min(100, Math.round((today / 60) * 100))}%`;
-      if (weeklyProg) weeklyProg.style.width = `${Math.min(100, Math.round((weekly / 300) * 100))}%`;
-      if (monthlyProg) monthlyProg.style.width = `${Math.min(100, Math.round((weekly / 300) * 100))}%`;
+      const bar = (id, val, goal) => {
+        const el = document.getElementById(id);
+        if (el) el.style.width = `${Math.min(100, Math.round((val / goal) * 100))}%`;
+      };
+      bar('todayProgress', today, 60);      // goal: 1 hr / day
+      bar('weeklyProgress', weekly, 300);   // goal: 5 hrs / week
+      bar('monthlyProgress', monthly, 1200); // goal: 20 hrs / month
     }
+    setInterval(updateStatsDisplay, 60000); // rolls over at midnight / new week / new month
 
     function resetStats() {
       if (confirm("Are you sure you want to reset your focus analytics?")) {
         localStorage.removeItem('todayFocus');
         localStorage.removeItem('weeklyFocus');
+        localStorage.setItem('focusLog', '{}');
         localStorage.removeItem('forestGarden');
         forest = [];
         updateStatsDisplay();

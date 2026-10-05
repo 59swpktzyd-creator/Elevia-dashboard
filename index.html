@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Elevia — Personal Focus Dashboard</title>
   
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=4">
 
   <!-- External Libraries -->
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -312,6 +312,16 @@
   </div>
 
   <!-- WARNING CONFIRMATION MODAL -->
+  <div id="toastHost" class="toast-host"></div>
+  <div id="msgOverlay" class="msg-overlay" onclick="if(event.target===this)closeMessage()">
+    <div class="msg-card" role="dialog" aria-modal="true">
+      <div class="msg-icon" id="msgIcon">✨</div>
+      <h3 class="cute-title" id="msgTitle"></h3>
+      <p id="msgText"></p>
+      <div class="msg-actions" id="msgActions"></div>
+    </div>
+  </div>
+
   <div id="warningModal" class="warning-modal">
     <div class="warning-content">
       <div style="font-size: 3rem; margin-bottom: 8px;">🥀</div>
@@ -551,22 +561,24 @@
 
     function removeWithered(i) {
       if (!forest[i] || !forest[i].withered) return;
-      if (!confirm('Remove this withered plant from your garden?')) return;
-      forest.splice(i, 1);
-      saveForest();
-      renderForestGarden();
+      askConfirm('Remove this plant?', 'This 🥀 will be cleared from your garden.', () => {
+        forest.splice(i, 1);
+        saveForest();
+        renderForestGarden();
+      }, 'Remove', '🥀', true);
     }
 
     function clearWithered() {
-      if (!confirm('Remove all withered plants from your garden?')) return;
-      forest = forest.filter(f => !f.withered);
-      saveForest();
-      renderForestGarden();
+      askConfirm('Clear withered plants?', 'All 🥀 will be removed from your garden.', () => {
+        forest = forest.filter(f => !f.withered);
+        saveForest();
+        renderForestGarden();
+      }, 'Clear them', '🧹', true);
     }
 
     function carePlant(action) {
       if (isWithered) {
-        alert("Your plant is withered! Tap 💚 Revive Plant or complete a focus session 🌿");
+        notify('Your plant is withered 🥀', 'Tap 💚 Revive Plant or complete a focus session to bring it back.', 'warn');
         return;
       }
 
@@ -582,7 +594,7 @@
         plantWater = Math.min(100, plantWater + 25);
         plantSun = Math.min(100, plantSun + 25);
       } else {
-        alert("Not enough points! Complete focus sessions to earn more.");
+        notify('Not enough points', 'Complete focus sessions to earn more 🪙', 'warn');
         return;
       }
       updatePointsDisplay();
@@ -591,7 +603,7 @@
 
     function openShop() {
       if (isWithered) {
-        alert("Revive your plant first (💚 button) before visiting the nursery!");
+        notify('Revive your plant first', 'Tap the 💚 button before visiting the nursery.', 'warn');
         return;
       }
       const grid = document.getElementById('shopGrid');
@@ -632,7 +644,7 @@
         renderPlant();
         openShop();
       } else {
-        alert("Not enough points to unlock this plant!");
+        notify('Not enough points', "You can't unlock this plant yet. Keep focusing! 🪙", 'warn');
       }
     }
 
@@ -814,7 +826,7 @@
       const input = document.getElementById('customMinutesInput');
       if (!input) return;
       const val = parseInt(input.value, 10);
-      if (!val || val < 1 || val > 180) return alert("Enter minutes between 1 and 180.");
+      if (!val || val < 1 || val > 180) return notify('Pick a time between 1 and 180', 'Enter a number of minutes in that range.', 'warn');
       setTimerDuration(val);
       input.value = '';
     }
@@ -887,9 +899,9 @@
       if (typeof confetti === 'function') confetti({ particleCount: 100, spread: 80 });
       playChime();
       confirmStopTimer(false);
-      setTimeout(() => alert(wasWithered
-        ? `🎉 Session Complete! Your plant has been revived and you earned 🪙 ${earned} points!`
-        : `🎉 Focus session completed! You earned 🪙 ${earned} points and planted a new tree in your forest!`), 50);
+      setTimeout(() => showMessage('Session complete!', wasWithered
+        ? `Your plant has been revived and you earned 🪙 ${earned} points.`
+        : `You earned 🪙 ${earned} points and planted a new tree in your forest.`, '🎉'), 50);
     }
 
     function requestTimerReset() {
@@ -1013,7 +1025,7 @@
     setInterval(updateStatsDisplay, 60000); // rolls over at midnight / new week / new month
 
     function resetStats() {
-      if (confirm("Are you sure you want to reset your focus analytics?")) {
+      askConfirm('Reset your stats?', 'This clears your focus analytics and your forest garden. It cannot be undone.', () => {
         localStorage.removeItem('todayFocus');
         localStorage.removeItem('weeklyFocus');
         localStorage.setItem('focusLog', '{}');
@@ -1021,8 +1033,60 @@
         forest = [];
         updateStatsDisplay();
         renderForestGarden();
-      }
+      }, 'Reset', '🗑️', true);
     }
+
+    // --- IN-PAGE MESSAGES (replaces the browser's alert / confirm popups) ---
+    const TOAST_ICONS = { info: '💬', success: '✅', warn: '🌿', error: '⚠️' };
+
+    function notify(title, message = '', type = 'info', ms = 4500) {
+      const host = document.getElementById('toastHost');
+      if (!host) return;
+      const t = document.createElement('div');
+      t.className = `toast toast-${type}`;
+      t.innerHTML = `
+        <div class="toast-icon">${TOAST_ICONS[type] || TOAST_ICONS.info}</div>
+        <div class="toast-body"><strong>${esc(title)}</strong>${message ? `<span>${esc(message)}</span>` : ''}</div>
+        <button class="toast-x" aria-label="Close">✕</button>
+        <div class="toast-timer" style="animation-duration: ${ms}ms;"></div>`;
+      const close = () => { t.classList.add('out'); setTimeout(() => t.remove(), 250); };
+      t.querySelector('.toast-x').onclick = close;
+      host.appendChild(t);
+      while (host.children.length > 3) host.firstChild.remove();
+      setTimeout(close, ms);
+    }
+
+    let msgCancel = null;
+    function openMessage(icon, title, text, buttons) {
+      document.getElementById('msgIcon').textContent = icon;
+      document.getElementById('msgTitle').textContent = title;
+      document.getElementById('msgText').textContent = text;
+      const box = document.getElementById('msgActions');
+      box.innerHTML = '';
+      buttons.forEach(b => {
+        const el = document.createElement('button');
+        el.className = `pill-btn ${b.cls || ''}`;
+        el.textContent = b.label;
+        el.onclick = () => { closeMessage(); if (b.fn) b.fn(); };
+        box.appendChild(el);
+      });
+      msgCancel = (buttons.find(b => b.cancel) || {}).fn || null;
+      document.getElementById('msgOverlay').classList.add('active');
+      box.lastElementChild?.focus();
+    }
+    function closeMessage() {
+      document.getElementById('msgOverlay')?.classList.remove('active');
+    }
+    function showMessage(title, text, icon = '✨') {
+      openMessage(icon, title, text, [{ label: 'Awesome!', cls: 'primary' }]);
+    }
+    function askConfirm(title, text, onYes, yesLabel = 'Yes', icon = '🌿', danger = false) {
+      openMessage(icon, title, text, [
+        { label: 'Cancel', cls: 'ghost', cancel: true },
+        { label: yesLabel, cls: danger ? 'danger' : 'primary', fn: onYes }
+      ]);
+    }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMessage(); });
 
     // --- 8. UTILS ---
     const fmtHrs = m => (m / 60).toFixed(2).replace(/\.?0+$/, '');
@@ -1146,15 +1210,15 @@
       document.getElementById('accountModal')?.classList.remove('active');
     } catch (error) {
       console.error("Profile update error:", error);
-      alert("Could not update your profile. Please try again.");
+      notify('Could not update profile', 'Please try again.', 'error');
     }
   };
 
   window.handleSignOut = () => {
-    if (confirm("Sign out of Elevia?")) {
+    askConfirm('Sign out of Elevia?', 'Your progress stays saved to your account.', () => {
       document.getElementById('accountModal')?.classList.remove('active');
       signOut(auth);
-    }
+    }, 'Sign out', '👋');
   };
 
   document.getElementById('googleSignInBtn')?.addEventListener('click', () => {
@@ -1164,7 +1228,7 @@
       })
       .catch((error) => {
         console.error("Sign-in error:", error);
-        alert("Could not sign in with Google. Check Firebase Auth settings!");
+        notify('Could not sign in', 'Check your Firebase Auth settings.', 'error');
       });
   });
 

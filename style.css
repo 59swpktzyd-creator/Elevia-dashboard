@@ -582,3 +582,32 @@ body[data-theme="deepsea"] { --bg:#06121F; --card:#0C2036; --text:#E3F0FB; --sub
 body[data-theme="amethyst"] .pill-btn.primary, body[data-theme="deepsea"] .pill-btn.primary,
 body[data-theme="amethyst"] .preset-pill.active, body[data-theme="deepsea"] .preset-pill.active,
 body[data-theme="amethyst"] .progress-bar-fill, body[data-theme="deepsea"] .progress-bar-fill { color: var(--bg); }
+
+
+/* --- IN-PAGE MESSAGES (toasts + dialogs) --- */
+.toast-host { position: fixed; top: 18px; left: 50%; transform: translateX(-50%); z-index: 3000; display: flex; flex-direction: column; gap: 10px; width: min(92vw, 400px); pointer-events: none; }
+.toast { position: relative; overflow: hidden; display: flex; align-items: center; gap: 12px; background: var(--card); color: var(--text); border: 1px solid var(--border); border-left: 5px solid var(--accent); border-radius: 14px; padding: 14px 40px 16px 14px; box-shadow: 0 12px 32px rgba(0,0,0,0.22); pointer-events: auto; animation: toastIn 0.35s cubic-bezier(.2,.9,.3,1.2); }
+.toast.out { opacity: 0; transform: translateY(-10px) scale(0.97); transition: all 0.25s ease; }
+.toast-warn { border-left-color: var(--gold); }
+.toast-error { border-left-color: var(--danger); }
+.toast-icon { font-size: 1.7rem; line-height: 1; }
+.toast-body { display: flex; flex-direction: column; gap: 2px; font-size: 0.85rem; }
+.toast-body strong { font-family: 'Fraunces', serif; font-size: 1rem; font-weight: 600; }
+.toast-body span { color: var(--subtext); }
+.toast-x { position: absolute; top: 8px; right: 10px; background: transparent; border: none; color: var(--subtext); cursor: pointer; font-size: 0.95rem; }
+.toast-x:hover { color: var(--text); }
+.toast-timer { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: var(--accent); opacity: 0.55; transform-origin: left; animation: toastTimer linear forwards; }
+.toast-warn .toast-timer { background: var(--gold); }
+.toast-error .toast-timer { background: var(--danger); }
+@keyframes toastIn { from { opacity: 0; transform: translateY(-18px) scale(0.95); } to { opacity: 1; transform: none; } }
+@keyframes toastTimer { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+.msg-overlay { display: none; position: fixed; inset: 0; z-index: 2500; background: rgba(15, 20, 14, 0.5); backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 20px; }
+.msg-overlay.active { display: flex; }
+.msg-card { background: var(--card); color: var(--text); border: 1px solid var(--accent-light); border-radius: 28px 12px 28px 12px; padding: 30px 26px 24px; max-width: 380px; width: 100%; text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,0.35); animation: msgPop 0.35s cubic-bezier(.2,.9,.3,1.25); }
+.msg-icon { font-size: 3.2rem; line-height: 1; margin-bottom: 10px; animation: float 4s ease-in-out infinite; }
+.msg-card h3 { font-size: 1.5rem; margin-bottom: 8px; }
+.msg-card p { color: var(--subtext); font-size: 0.95rem; line-height: 1.5; }
+.msg-actions { display: flex; gap: 10px; justify-content: center; margin-top: 22px; }
+.msg-actions .pill-btn { min-width: 110px; }
+@keyframes msgPop { from { opacity: 0; transform: translateY(14px) scale(0.92); } to { opacity: 1; transform: none; } }

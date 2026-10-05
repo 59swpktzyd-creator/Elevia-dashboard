@@ -142,6 +142,7 @@
           <button onclick="carePlant('water')" class="pill-btn">💧 Water (5 pts)</button>
           <button onclick="carePlant('sun')" class="pill-btn">☀️ Sun (5 pts)</button>
           <button onclick="carePlant('fertilize')" class="pill-btn primary">🌱 Fertilize (15 pts)</button>
+          <button id="reviveBtn" onclick="revivePlant()" class="pill-btn primary" style="display: none;">💚 Revive Plant</button>
           <button onclick="openShop()" class="pill-btn ghost">🛒 Nursery Shop</button>
         </div>
       </div>
@@ -165,6 +166,7 @@
           <h3 class="cute-title" style="font-size: 1.3rem;">🌲 My Forest Garden</h3>
           <span class="streak-badge" style="padding: 4px 10px; font-size: 0.8rem;" id="forestCount">0 Plants Grown</span>
         </div>
+        <div style="text-align: right; margin: -4px 0 10px;"><button id="clearWitheredBtn" onclick="clearWithered()" class="pill-btn ghost" style="display: none; padding: 5px 12px; font-size: 0.78rem;">🧹 Clear withered</button></div>
         <p style="font-size: 0.85rem; color: var(--subtext); margin-bottom: 14px;">Every completed focus session plants a healthy tree here. Quit early or neglect your plant and a 🥀 joins the garden.</p>
         <div id="forestGrid" style="display: flex; flex-wrap: wrap; gap: 10px; min-height: 40px; align-items: center;">
           <span style="font-size: 0.85rem; color: var(--subtext); font-style: italic;">No full sessions completed yet today. Start focusing!</span>
@@ -475,6 +477,8 @@
 
     function renderPlant() {
       const current = PLANT_CATALOG.find(p => p.id === activePlantId) || PLANT_CATALOG[0];
+      const reviveBtn = document.getElementById('reviveBtn');
+      if (reviveBtn) reviveBtn.style.display = isWithered ? '' : 'none';
       
       const iconEl = document.getElementById('plantDisplay');
       const nameEl = document.getElementById('plantName');
@@ -489,7 +493,7 @@
       if (isWithered) {
         if (iconEl) iconEl.textContent = '🥀';
         if (nameEl) nameEl.textContent = 'Withered Plant';
-        if (statusEl) statusEl.textContent = 'Withered! Complete a full session to revive.';
+        if (statusEl) statusEl.textContent = 'Withered! Tap Revive Plant or complete a session.';
         if (focusIconEl) focusIconEl.textContent = '🥀';
         if (focusStatusEl) focusStatusEl.textContent = 'Your plant is withered. Finish a session to save it!';
       } else {
@@ -524,16 +528,45 @@
       const forestCount = document.getElementById('forestCount');
       const dead = forest.filter(f => f.withered).length;
       if (forestCount) forestCount.textContent = `${forest.length - dead} Grown · ${dead} Withered`;
+      const clr = document.getElementById('clearWitheredBtn');
+      if (clr) clr.style.display = dead ? '' : 'none';
       if (forestGrid) {
         forestGrid.innerHTML = forest.length
-          ? forest.map(t => `<span title="${esc(t.name || 'Plant')}${t.withered ? ' (withered)' : ''}" style="font-size: 1.8rem;${t.withered ? ' filter: grayscale(1); opacity: 0.6;' : ''}">${t.withered ? '🥀' : t.icon}</span>`).join('')
+          ? forest.map((t, i) => t.withered
+            ? `<span title="${esc(t.name || 'Plant')} (withered) - click to remove" onclick="removeWithered(${i})" style="font-size: 1.8rem; filter: grayscale(1); opacity: 0.6; cursor: pointer;">🥀</span>`
+            : `<span title="${esc(t.name || 'Plant')}" style="font-size: 1.8rem;">${t.icon}</span>`).join('')
           : `<span style="font-size: 0.85rem; color: var(--subtext); font-style: italic;">Nothing planted yet. Start focusing!</span>`;
       }
     }
 
+    function revivePlant() {
+      if (!isWithered) return;
+      isWithered = false;
+      plantHealth = 60;
+      plantWater = Math.max(plantWater, 50);
+      plantSun = Math.max(plantSun, 50);
+      lastPlantTick = Date.now();
+      renderPlant();
+    }
+
+    function removeWithered(i) {
+      if (!forest[i] || !forest[i].withered) return;
+      if (!confirm('Remove this withered plant from your garden?')) return;
+      forest.splice(i, 1);
+      saveForest();
+      renderForestGarden();
+    }
+
+    function clearWithered() {
+      if (!confirm('Remove all withered plants from your garden?')) return;
+      forest = forest.filter(f => !f.withered);
+      saveForest();
+      renderForestGarden();
+    }
+
     function carePlant(action) {
       if (isWithered) {
-        alert("Your plant is withered! Complete a full focus session to revive it 🌿");
+        alert("Your plant is withered! Tap 💚 Revive Plant or complete a focus session 🌿");
         return;
       }
 
@@ -558,7 +591,7 @@
 
     function openShop() {
       if (isWithered) {
-        alert("Revive your plant first before visiting the nursery!");
+        alert("Revive your plant first (💚 button) before visiting the nursery!");
         return;
       }
       const grid = document.getElementById('shopGrid');

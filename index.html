@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Elevia — Personal Focus Dashboard</title>
   
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=3">
 
   <!-- External Libraries -->
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -426,11 +426,14 @@
       setInterval(plantTick, 30000);
     }
 
-    // Water/sun drain with real time (even while the tab is closed, capped at 72h).
+    // Water/sun drain ONLY while the app is open and you're looking at it.
+    // Time spent closed, asleep or in a hidden tab never counts against your plant.
     // At 0 water or sun the plant loses health; at 0 health it withers.
     function plantTick() {
       const now = Date.now();
-      const hrs = Math.min(72, Math.max(0, (now - lastPlantTick) / 3600000));
+      const gap = now - lastPlantTick;
+      const counts = !document.hidden && gap > 0 && gap <= 120000;
+      const hrs = counts ? gap / 3600000 : 0;
       lastPlantTick = now;
       localStorage.setItem('lastPlantTick', now);
       if (!isWithered) {

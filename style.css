@@ -611,3 +611,6 @@ body[data-theme="amethyst"] .progress-bar-fill, body[data-theme="deepsea"] .prog
 .msg-actions { display: flex; gap: 10px; justify-content: center; margin-top: 22px; }
 .msg-actions .pill-btn { min-width: 110px; }
 @keyframes msgPop { from { opacity: 0; transform: translateY(14px) scale(0.92); } to { opacity: 1; transform: none; } }
+
+/* bonus (overtime) clock */
+.clock-display.overtime { color: var(--gold); }

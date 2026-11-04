@@ -1,0 +1,159 @@
+/* Elevia pre-deployment upgrades: analytics, focus modes, themes and motion fixes */
+
+.focus-mode-switch {
+  display: inline-flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 5px;
+  margin: 18px auto 4px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+}
+.focus-mode-btn {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--subtext);
+  border-radius: 8px;
+  padding: 9px 16px;
+  font: 600 .88rem 'Work Sans', sans-serif;
+  cursor: pointer;
+  transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+}
+.focus-mode-btn:hover { color: var(--text); }
+.focus-mode-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+body[data-theme="night"] .focus-mode-btn.active,
+body[data-theme="midnight"] .focus-mode-btn.active,
+body[data-theme="mocha"] .focus-mode-btn.active,
+body[data-theme="amethyst"] .focus-mode-btn.active,
+body[data-theme="deepsea"] .focus-mode-btn.active,
+body[data-theme="berry"] .focus-mode-btn.active { color: var(--bg); }
+
+.stat-time-value {
+  font-family: 'Fraunces', serif;
+  font-size: clamp(1.45rem, 3vw, 2rem);
+  line-height: 1.25;
+  margin: 8px 0;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.monthly-chart-card {
+  margin-top: 24px;
+  padding: 20px 18px 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  text-align: left;
+}
+.monthly-chart-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.monthly-chart-heading h3 { font-size: 1.25rem; }
+.chart-subtitle { color: var(--subtext); font-size: .82rem; margin-top: 3px; }
+.monthly-focus-chart {
+  min-height: 190px;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: clamp(4px, 1.2vw, 12px);
+  align-items: end;
+  padding: 8px 2px 0;
+}
+.month-bar-column {
+  min-width: 0;
+  height: 174px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+}
+.month-bar-value {
+  min-height: 14px;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--subtext);
+  font-size: clamp(.48rem, .75vw, .68rem);
+  line-height: 1.1;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.month-bar-track {
+  height: 125px;
+  width: min(100%, 34px);
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  border-radius: 9px 9px 4px 4px;
+  background: color-mix(in srgb, var(--accent-light) 65%, var(--bg));
+}
+.month-bar-fill {
+  width: 100%;
+  min-height: 2px;
+  border-radius: 8px 8px 3px 3px;
+  background: var(--accent);
+  transition: height .45s cubic-bezier(.2,.75,.25,1);
+}
+.month-bar-column:last-child .month-bar-fill { background: var(--gold); }
+.month-bar-label {
+  color: var(--subtext);
+  font-size: .7rem;
+  font-weight: 600;
+}
+
+/* Prevent text refreshes from restarting the plant's float animation. */
+.plant-avatar {
+  animation: float 5.5s ease-in-out infinite;
+  will-change: transform;
+  transform: translateZ(0);
+}
+#focusPlantDisplay { animation-duration: 6.5s; }
+.plant-avatar.withered-anim { animation: wither 1s forwards; }
+
+/* Additional palettes */
+body[data-theme="sage"] { --bg:#E8EEE5; --card:#F8FBF6; --text:#26372A; --subtext:#718174; --accent:#6F9275; --accent-hover:#5C7D62; --accent-light:#DCE8DA; --gold:#B58B48; --gold-light:#F1E6D0; --border:#CFDCCB; --danger:#A94F49; --danger-light:#F3DEDA; }
+body[data-theme="rosewater"] { --bg:#F8E9E8; --card:#FFF8F6; --text:#442B32; --subtext:#8B6D73; --accent:#C97883; --accent-hover:#B76572; --accent-light:#F2D9D9; --gold:#B98B50; --gold-light:#F4E6D1; --border:#EBD1D1; --danger:#B64E4A; --danger-light:#F5DDDA; }
+body[data-theme="buttercream"] { --bg:#F5EEDB; --card:#FFFCF2; --text:#3C3322; --subtext:#82765E; --accent:#B68B45; --accent-hover:#9E7638; --accent-light:#EEE2C4; --gold:#B68B45; --gold-light:#F2E5C8; --border:#E4D8BB; --danger:#A84F3D; --danger-light:#F3DED4; }
+body[data-theme="powderblue"] { --bg:#E7EFF7; --card:#F8FBFF; --text:#25364A; --subtext:#71849A; --accent:#6388B5; --accent-hover:#52769F; --accent-light:#D8E5F2; --gold:#B48A45; --gold-light:#F2E7D1; --border:#CEDCEB; --danger:#B45C57; --danger-light:#F4DEDC; }
+body[data-theme="matcha"] { --bg:#E7E8D8; --card:#F8F8EE; --text:#343A27; --subtext:#7A8064; --accent:#7B8650; --accent-hover:#697440; --accent-light:#DDE1C6; --gold:#B68A3E; --gold-light:#F0E4C8; --border:#D5D8BE; --danger:#A64D3D; --danger-light:#F2DCD5; }
+body[data-theme="berry"] { --bg:#211827; --card:#302238; --text:#F3EAF3; --subtext:#B9A7BB; --accent:#D49ACB; --accent-hover:#C487BA; --accent-light:#49334D; --gold:#E2C078; --gold-light:#40331F; --border:#4B3850; --danger:#EF938A; --danger-light:#48292F; }
+
+@media (max-width: 600px) {
+  .focus-mode-switch { width: 100%; }
+  .focus-mode-btn { flex: 1; padding: 9px 8px; }
+  .monthly-chart-card { padding: 16px 10px 12px; }
+  .monthly-focus-chart { gap: 3px; }
+  .month-bar-column { height: 160px; }
+  .month-bar-track { height: 112px; width: min(100%, 22px); }
+  .month-bar-label { font-size: .62rem; }
+  .month-bar-value { font-size: .46rem; }
+  .monthly-chart-heading { flex-direction: column; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plant-avatar, .plant-avatar.withered-anim, .msg-icon { animation: none !important; }
+  .month-bar-fill, * { scroll-behavior: auto !important; }
+}
+body[data-theme="sage"] .pill-btn.primary,
+body[data-theme="sage"] .preset-pill.active,
+body[data-theme="sage"] .focus-mode-btn.active,
+body[data-theme="rosewater"] .pill-btn.primary,
+body[data-theme="rosewater"] .preset-pill.active,
+body[data-theme="rosewater"] .focus-mode-btn.active,
+body[data-theme="buttercream"] .pill-btn.primary,
+body[data-theme="buttercream"] .preset-pill.active,
+body[data-theme="buttercream"] .focus-mode-btn.active,
+body[data-theme="powderblue"] .pill-btn.primary,
+body[data-theme="powderblue"] .preset-pill.active,
+body[data-theme="powderblue"] .focus-mode-btn.active,
+body[data-theme="matcha"] .pill-btn.primary,
+body[data-theme="matcha"] .preset-pill.active,
+body[data-theme="matcha"] .focus-mode-btn.active { color: var(--text); }

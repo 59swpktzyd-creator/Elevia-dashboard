@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Elevia — Personal Focus Dashboard</title>
   
-  <link rel="stylesheet" href="style.css?v=5">
+  <link rel="stylesheet" href="style.css?v=6">
+  <link rel="stylesheet" href="elevia-upgrades.css?v=1">
 
   <!-- External Libraries -->
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -230,7 +231,12 @@
           <div class="plant-avatar" id="focusPlantDisplay" style="font-size: 4rem; margin: 12px 0 0 0;">🌱</div>
           <p id="focusPlantStatus" style="font-size: 0.85rem; color: var(--subtext); margin-bottom: 12px;">Keep studying to help me grow!</p>
 
-          <div class="timer-presets">
+          <div class="focus-mode-switch" role="group" aria-label="Focus timer mode">
+            <button id="countdownModeBtn" class="focus-mode-btn active" onclick="setFocusMode('countdown')">⏳ Countdown</button>
+            <button id="countupModeBtn" class="focus-mode-btn" onclick="setFocusMode('countup')">⏱ Count up</button>
+          </div>
+
+          <div class="timer-presets" id="timerPresets">
             <button class="preset-pill active" onclick="setTimerDuration(5)">5m</button>
             <button class="preset-pill" onclick="setTimerDuration(15)">15m</button>
             <button class="preset-pill" onclick="setTimerDuration(25)">25m</button>
@@ -246,6 +252,7 @@
           <div style="display: flex; gap: 12px; justify-content: center;">
             <button id="startTimerBtn" onclick="handleTimerToggle()" class="pill-btn primary" style="padding: 12px 32px; font-size: 1rem;">Start Focus</button>
             <button onclick="requestTimerReset()" class="pill-btn ghost">Reset</button>
+            <button id="finishCountUpBtn" onclick="finishCountUpSession()" class="pill-btn primary" style="display:none;">Finish & Save</button>
           </div>
         </div>
 
@@ -261,7 +268,7 @@
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 24px;">
       <div style="background: var(--bg); padding: 16px; border-radius: 16px; border: 1px solid var(--border);">
         <span style="font-size: 0.8rem; font-weight: 700; color: var(--subtext); text-transform: uppercase;">Today</span>
-        <h3 style="font-size: 2rem; margin: 8px 0;"><span id="todayFocusTime">0</span> <span style="font-size: 1rem; color: var(--subtext);">hrs</span></h3>
+        <h3 class="stat-time-value" id="todayFocusTime">0m</h3>
         <div style="width: 100%; background: var(--border); height: 6px; border-radius: 3px; overflow: hidden;">
           <div id="todayProgress" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.3s;"></div>
         </div>
@@ -269,7 +276,7 @@
 
       <div style="background: var(--bg); padding: 16px; border-radius: 16px; border: 1px solid var(--border);">
         <span style="font-size: 0.8rem; font-weight: 700; color: var(--subtext); text-transform: uppercase;">This Week</span>
-        <h3 style="font-size: 2rem; margin: 8px 0;"><span id="weeklyFocusTime">0</span> <span style="font-size: 1rem; color: var(--subtext);">hrs</span></h3>
+        <h3 class="stat-time-value" id="weeklyFocusTime">0m</h3>
         <div style="width: 100%; background: var(--border); height: 6px; border-radius: 3px; overflow: hidden;">
           <div id="weeklyProgress" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.3s;"></div>
         </div>
@@ -277,11 +284,22 @@
 
       <div style="background: var(--bg); padding: 16px; border-radius: 16px; border: 1px solid var(--border);">
         <span style="font-size: 0.8rem; font-weight: 700; color: var(--subtext); text-transform: uppercase;">This Month</span>
-        <h3 style="font-size: 2rem; margin: 8px 0;"><span id="monthlyFocusTime">0.0</span> <span style="font-size: 1rem; color: var(--subtext);">hrs</span></h3>
+        <h3 class="stat-time-value" id="monthlyFocusTime">0m</h3>
         <div style="width: 100%; background: var(--border); height: 6px; border-radius: 3px; overflow: hidden;">
           <div id="monthlyProgress" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.3s;"></div>
         </div>
       </div>
+    </div>
+
+    <div class="monthly-chart-card">
+      <div class="monthly-chart-heading">
+        <div>
+          <h3 class="cute-title">Your study journey</h3>
+          <p class="chart-subtitle">Focus time over the last 12 months</p>
+        </div>
+        <span id="chartTotalTime" class="badge">0m total</span>
+      </div>
+      <div id="monthlyFocusChart" class="monthly-focus-chart" role="img" aria-label="Monthly focus time chart"></div>
     </div>
 
     <button onclick="resetStats()" class="delete-ghost" style="margin-top: 20px; font-size: 0.85rem;">Reset Stats Data</button>
@@ -501,17 +519,17 @@
       const sunVal = document.getElementById('sunValue');
 
       if (isWithered) {
-        if (iconEl) iconEl.textContent = '🥀';
+        if (iconEl && iconEl.textContent !== '🥀') iconEl.textContent = '🥀';
         if (nameEl) nameEl.textContent = 'Withered Plant';
         if (statusEl) statusEl.textContent = 'Withered! Tap Revive Plant or complete a session.';
-        if (focusIconEl) focusIconEl.textContent = '🥀';
-        if (focusStatusEl) focusStatusEl.textContent = 'Your plant is withered. Finish a session to save it!';
+        if (focusIconEl && focusIconEl.textContent !== '🥀') focusIconEl.textContent = '🥀';
+        if (focusStatusEl && focusStatusEl.textContent !== 'Your plant is withered. Finish a session to save it!') focusStatusEl.textContent = 'Your plant is withered. Finish a session to save it!';
       } else {
-        if (iconEl) iconEl.textContent = current.icon;
+        if (iconEl && iconEl.textContent !== current.icon) iconEl.textContent = current.icon;
         if (nameEl) nameEl.textContent = current.name;
         if (statusEl) statusEl.textContent = plantWater < 25 ? "I'm thirsty! 💧" : plantSun < 25 ? 'I need some sun ☀️' : plantHealth < 40 ? "I'm not feeling well..." : 'Happy and healthy!';
-        if (focusIconEl) focusIconEl.textContent = current.icon;
-        if (focusStatusEl) focusStatusEl.textContent = 'Keep studying to help me grow!';
+        if (focusIconEl && focusIconEl.textContent !== current.icon) focusIconEl.textContent = current.icon;
+        if (focusStatusEl && !isRunning && focusStatusEl.textContent !== 'Keep studying to help me grow!') focusStatusEl.textContent = 'Keep studying to help me grow!';
       }
 
       const W = Math.round(plantWater), S = Math.round(plantSun), H = Math.round(plantHealth);
@@ -773,6 +791,7 @@
     // --- 6. FOCUS TIMER (timestamp-based: pausable, accurate in background, survives refresh) ---
     const ORIG_TITLE = document.title;
     let selectedMinutes = 5, remaining = 300, isRunning = false, isPaused = false, endTime = null, ticker = null;
+    let focusMode = 'countdown', countUpElapsed = 0, countUpLastTick = 0;
 
     // Bonus time: when the countdown hits 0 the session is already won (points + plant).
     // The clock then counts UP, and the extra minutes are added when you press Finish.
@@ -810,7 +829,7 @@
 
     function saveSession() {
       if (!isRunning) localStorage.removeItem('focusSession');
-      else localStorage.setItem('focusSession', JSON.stringify({ selectedMinutes, remaining, endTime, isPaused, isOvertime, overtimeSecs, lastOT }));
+      else localStorage.setItem('focusSession', JSON.stringify({ selectedMinutes, remaining, endTime, isPaused, isOvertime, overtimeSecs, lastOT, focusMode, countUpElapsed, countUpLastTick }));
     }
 
     function setBtn() {
@@ -818,6 +837,25 @@
       if (!b) return;
       if (isOvertime) { const m = Math.floor(overtimeSecs / 60); b.textContent = `✅ Finish${m ? ` (+${m} min)` : ''}`; return; }
       b.textContent = !isRunning ? 'Start Focus' : isPaused ? '▶ Resume' : '⏸ Pause';
+      const finishBtn = document.getElementById('finishCountUpBtn');
+      if (finishBtn) finishBtn.style.display = focusMode === 'countup' && isRunning ? '' : 'none';
+    }
+
+    function setFocusMode(mode) {
+      if (!['countdown', 'countup'].includes(mode)) return;
+      if (isRunning) {
+        notify('Finish your current session first', 'You can switch modes once this focus session has ended.', 'warn');
+        return;
+      }
+      focusMode = mode;
+      document.getElementById('countdownModeBtn')?.classList.toggle('active', mode === 'countdown');
+      document.getElementById('countupModeBtn')?.classList.toggle('active', mode === 'countup');
+      const presets = document.getElementById('timerPresets');
+      if (presets) presets.style.display = mode === 'countdown' ? 'flex' : 'none';
+      countUpElapsed = 0;
+      updateClockDisplay();
+      setBtn();
+      updateFocusPlantGrowth();
     }
 
     function setTimerDuration(mins) {
@@ -842,9 +880,71 @@
 
     function handleTimerToggle() {
       if (isOvertime) finishOvertime();
-      else if (!isRunning) startTimer();
+      else if (focusMode === 'countup') {
+        if (!isRunning) startCountUp();
+        else if (isPaused) resumeCountUp();
+        else pauseCountUp();
+      } else if (!isRunning) startTimer();
       else if (isPaused) resumeTimer();
       else pauseTimer();
+    }
+
+    function startCountUp() {
+      isRunning = true; isPaused = false;
+      countUpLastTick = Date.now();
+      startTicker(); setBtn(); saveSession(); updateClockDisplay(); updateFocusPlantGrowth(); requestWake();
+    }
+
+    function pauseCountUp() {
+      tickCountUp();
+      if (!isRunning) return;
+      stopTicker(); isPaused = true; countUpLastTick = 0;
+      setBtn(); saveSession(); updateFocusPlantGrowth(); releaseWake();
+    }
+
+    function resumeCountUp() {
+      isPaused = false; countUpLastTick = Date.now();
+      startTicker(); setBtn(); saveSession(); updateFocusPlantGrowth(); requestWake();
+    }
+
+    function tickCountUp() {
+      if (!isRunning || isPaused || !countUpLastTick) return;
+      const now = Date.now();
+      const delta = (now - countUpLastTick) / 1000;
+      countUpLastTick = now;
+      // Ignore long gaps caused by a sleeping computer or a closed browser tab.
+      if (delta > 0 && delta <= 90) countUpElapsed += delta;
+      updateClockDisplay();
+      updateFocusPlantGrowth();
+      saveSession();
+    }
+
+    function finishCountUpSession() {
+      if (focusMode !== 'countup' || !isRunning) return;
+      tickCountUp();
+      stopTicker(); releaseWake();
+      const minutes = Math.round(countUpElapsed / 60);
+      isRunning = false; isPaused = false; countUpLastTick = 0;
+      localStorage.removeItem('focusSession');
+      if (minutes > 0) {
+        const earned = Math.max(1, Math.round((minutes / 30) * 10));
+        userPoints += earned; updatePointsDisplay();
+        const plant = currentPlant();
+        forest.push({ icon: plant.icon, name: plant.name, withered: false, t: Date.now() });
+        saveForest();
+        if (isWithered) {
+          isWithered = false; plantHealth = 60;
+          plantWater = Math.max(plantWater, 50); plantSun = Math.max(plantSun, 50);
+        }
+        recordCompletedFocusTime(minutes);
+        if (typeof confetti === 'function') confetti({ particleCount: 70, spread: 65 });
+        playChime();
+        notify('Focus session saved!', `${formatFocusTime(minutes)} added to your stats and 🪙 ${earned} points earned.`, 'success');
+      } else {
+        notify('Very short session', 'Less than 30 seconds of focus was recorded, so no study time was added.', 'warn');
+      }
+      countUpElapsed = 0;
+      setBtn(); updateClockDisplay(); renderPlant(); updateFocusPlantGrowth();
     }
 
     function updateFocusPlantGrowth() {
@@ -852,19 +952,29 @@
       const status = document.getElementById('focusPlantStatus');
       if (!icon || !isRunning) return;
       if (isOvertime) {
-        icon.textContent = currentPlant().icon;
-        if (status) status.textContent = `Bonus time! 🌟 Press Finish to collect it (auto-ends after ${OVERTIME_CAP_MIN} min).`;
+        if (icon.textContent !== currentPlant().icon) icon.textContent = currentPlant().icon;
+        if (status && status.textContent !== `Bonus time! 🌟 Press Finish to collect it (auto-ends after ${OVERTIME_CAP_MIN} min).`) status.textContent = `Bonus time! 🌟 Press Finish to collect it (auto-ends after ${OVERTIME_CAP_MIN} min).`;
         return;
       }
       if (isPaused) { if (status) status.textContent = 'Paused. Resume when you are ready.'; return; }
+      if (focusMode === 'countup') {
+        const mins = Math.floor(countUpElapsed / 60);
+        const [stage, message] = mins < 5 ? ['🌰', 'A little time is still progress.']
+          : mins < 15 ? ['🌱', 'You are building momentum...']
+          : mins < 30 ? ['🌿', 'Look at you growing!']
+          : [currentPlant().icon, 'Deep focus. Keep going!'];
+        if (icon.textContent !== stage) icon.textContent = stage;
+        if (status && status.textContent !== message) status.textContent = message;
+        return;
+      }
       const total = selectedMinutes * 60;
       const pct = total > 0 ? Math.max(0, total - remaining) / total : 0;
       const [i, t] = pct < 0.2 ? ['🌰', 'A tiny seed, just planted...']
         : pct < 0.5 ? ['🌱', 'Sprouting! Keep going...']
         : pct < 0.85 ? ['🌿', 'Growing steadily...']
         : [currentPlant().icon, 'Almost fully grown!'];
-      icon.textContent = i;
-      if (status) status.textContent = t;
+      if (icon.textContent !== i) icon.textContent = i;
+      if (status && status.textContent !== t) status.textContent = t;
     }
 
     function startTimer() {
@@ -934,6 +1044,7 @@
 
     function tick() {
       if (isOvertime) return tickOvertime();
+      if (focusMode === 'countup') return tickCountUp();
       if (!isRunning || isPaused || !endTime) return;
       remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
       updateClockDisplay();
@@ -984,26 +1095,43 @@
       saveSession();
       if (didWither) witherPlant();
       remaining = selectedMinutes * 60;
+      countUpElapsed = 0; countUpLastTick = 0;
       setBtn(); updateClockDisplay(); closeWarningModal(); renderPlant();
     }
 
     function updateClockDisplay() {
       const display = document.getElementById('timerDisplay');
-      const secs = isOvertime ? Math.floor(overtimeSecs) : remaining;
-      const m = String(Math.floor(secs / 60)).padStart(2, '0');
-      const s = String(secs % 60).padStart(2, '0');
+      const secs = isOvertime ? Math.floor(overtimeSecs) : focusMode === 'countup' ? Math.floor(countUpElapsed) : remaining;
+      const hours = Math.floor(secs / 3600);
+      const m = String(Math.floor((secs % 3600) / 60)).padStart(2, '0');
+      const sec = String(secs % 60).padStart(2, '0');
+      const clock = hours > 0 ? `${String(hours).padStart(2, '0')}:${m}:${sec}` : `${m}:${sec}`;
       const sign = isOvertime ? '+' : '';
-      if (display) { display.textContent = `${sign}${m}:${s}`; display.classList.toggle('overtime', isOvertime); }
-      document.title = isRunning && !isPaused ? `${sign}${m}:${s} · Elevia` : ORIG_TITLE;
+      if (display) { display.textContent = `${sign}${clock}`; display.classList.toggle('overtime', isOvertime); }
+      document.title = isRunning && !isPaused ? `${sign}${clock} · Elevia` : ORIG_TITLE;
     }
 
     function restoreSession() {
       let saved = null;
       try { saved = JSON.parse(localStorage.getItem('focusSession')); } catch (e) {}
       if (!saved) return;
-      selectedMinutes = saved.selectedMinutes; remaining = saved.remaining;
+      selectedMinutes = saved.selectedMinutes || selectedMinutes; remaining = saved.remaining ?? remaining;
+      focusMode = saved.focusMode === 'countup' ? 'countup' : 'countdown';
+      countUpElapsed = Number(saved.countUpElapsed) || 0;
+      countUpLastTick = Number(saved.countUpLastTick) || 0;
+      document.getElementById('countdownModeBtn')?.classList.toggle('active', focusMode === 'countdown');
+      document.getElementById('countupModeBtn')?.classList.toggle('active', focusMode === 'countup');
+      const presets = document.getElementById('timerPresets');
+      if (presets) presets.style.display = focusMode === 'countdown' ? 'flex' : 'none';
       isRunning = true; isPaused = !!saved.isPaused; endTime = saved.endTime;
       document.querySelectorAll('.preset-pill').forEach(b => b.classList.toggle('active', b.textContent === `${selectedMinutes}m`));
+      if (focusMode === 'countup') {
+        isOvertime = false; endTime = null;
+        if (!isPaused) countUpLastTick = Date.now();
+        setBtn(); updateClockDisplay(); updateFocusPlantGrowth();
+        if (!isPaused) { startTicker(); requestWake(); }
+        return;
+      }
       if (saved.isOvertime) {
         isOvertime = true; isPaused = false; endTime = null; remaining = 0;
         overtimeSecs = Number(saved.overtimeSecs) || 0;
@@ -1103,9 +1231,10 @@
       const todayEl = document.getElementById('todayFocusTime');
       const weeklyEl = document.getElementById('weeklyFocusTime');
       const monthlyEl = document.getElementById('monthlyFocusTime');
-      if (todayEl) todayEl.textContent = fmtHrs(today);
-      if (weeklyEl) weeklyEl.textContent = fmtHrs(weekly);
-      if (monthlyEl) monthlyEl.textContent = fmtHrs(monthly);
+      if (todayEl) todayEl.textContent = formatFocusTime(today);
+      if (weeklyEl) weeklyEl.textContent = formatFocusTime(weekly);
+      if (monthlyEl) monthlyEl.textContent = formatFocusTime(monthly);
+      renderMonthlyFocusChart(log, now);
 
       const bar = (id, val, goal) => {
         const el = document.getElementById(id);
@@ -1115,6 +1244,40 @@
       bar('weeklyProgress', weekly, 300);   // goal: 5 hrs / week
       bar('monthlyProgress', monthly, 1200); // goal: 20 hrs / month
     }
+    function formatFocusTime(totalMinutes) {
+      const minutes = Math.max(0, Math.round(Number(totalMinutes) || 0));
+      const hours = Math.floor(minutes / 60);
+      const remainder = minutes % 60;
+      if (hours && remainder) return `${hours}h ${remainder}m`;
+      if (hours) return `${hours}h`;
+      return `${remainder}m`;
+    }
+
+    function renderMonthlyFocusChart(log, now = new Date()) {
+      const chart = document.getElementById('monthlyFocusChart');
+      if (!chart) return;
+      const months = [];
+      for (let offset = 11; offset >= 0; offset--) {
+        const date = new Date(now.getFullYear(), now.getMonth() - offset, 1);
+        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        const total = Object.entries(log).reduce((sum, [day, mins]) => sum + (day.startsWith(key) ? Number(mins) || 0 : 0), 0);
+        months.push({ key, label: date.toLocaleDateString(undefined, { month: 'short' }), total });
+      }
+      const max = Math.max(60, ...months.map(m => m.total));
+      const grandTotal = months.reduce((sum, m) => sum + m.total, 0);
+      const totalEl = document.getElementById('chartTotalTime');
+      if (totalEl) totalEl.textContent = `${formatFocusTime(grandTotal)} total`;
+      chart.innerHTML = months.map(m => {
+        const height = m.total ? Math.max(3, (m.total / max) * 100) : 2;
+        return `<div class="month-bar-column" title="${m.label}: ${formatFocusTime(m.total)}">
+          <div class="month-bar-value">${m.total ? formatFocusTime(m.total) : ''}</div>
+          <div class="month-bar-track"><div class="month-bar-fill" style="height:${height}%"></div></div>
+          <span class="month-bar-label">${m.label}</span>
+        </div>`;
+      }).join('');
+      chart.setAttribute('aria-label', 'Monthly study time for the last 12 months: ' + months.map(m => `${m.label} ${formatFocusTime(m.total)}`).join(', '));
+    }
+
     setInterval(updateStatsDisplay, 60000); // rolls over at midnight / new week / new month
 
     function resetStats() {
@@ -1182,7 +1345,7 @@
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMessage(); });
 
     // --- 8. UTILS ---
-    const fmtHrs = m => (m / 60).toFixed(2).replace(/\.?0+$/, '');
+    const fmtHrs = m => formatFocusTime(m);
     const esc = t => String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
     const THEMES = [
@@ -1195,7 +1358,13 @@
       { id: 'midnight', name: 'Midnight', c: ['#0E1424', '#161E33', '#7C9CFF'] },
       { id: 'mocha', name: 'Mocha', c: ['#1C1612', '#261E18', '#D9A066'] },
       { id: 'amethyst', name: 'Dark Purple', c: ['#150E24', '#20163A', '#B48CFF'] },
-      { id: 'deepsea', name: 'Dark Blue', c: ['#06121F', '#0C2036', '#4DB2FF'] }
+      { id: 'deepsea', name: 'Dark Blue', c: ['#06121F', '#0C2036', '#4DB2FF'] },
+      { id: 'sage', name: 'Soft Sage', c: ['#E8EEE5', '#F8FBF6', '#6F9275'] },
+      { id: 'rosewater', name: 'Rosewater', c: ['#F8E9E8', '#FFF8F6', '#C97883'] },
+      { id: 'buttercream', name: 'Buttercream', c: ['#F5EEDB', '#FFFCF2', '#B68B45'] },
+      { id: 'powderblue', name: 'Powder Blue', c: ['#E7EFF7', '#F8FBFF', '#6388B5'] },
+      { id: 'matcha', name: 'Matcha Latte', c: ['#E7E8D8', '#F8F8EE', '#7B8650'] },
+      { id: 'berry', name: 'Blackberry', c: ['#211827', '#302238', '#D49ACB'] }
     ];
 
     function applyTheme(id) {
@@ -1440,7 +1609,7 @@
               <span class="leaderboard-name">${u.displayName}</span>
             </div>
             <div class="leaderboard-row-stats">
-              <span>⏱️ <strong>${fmtHrs(u.totalFocusMinutes || 0)}</strong> hrs</span>
+              <span>⏱️ <strong>${fmtHrs(u.totalFocusMinutes || 0)}</strong></span>
               <span>🪙 <strong>${u.points || 0}</strong> pts</span>
             </div>
           </div>

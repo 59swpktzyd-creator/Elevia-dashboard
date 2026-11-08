@@ -559,29 +559,59 @@ body {
   }
 }
 
-/* --- THEMES (chosen via the Theme button, saved in localStorage) --- */
-body[data-theme="night"] { --bg:#141C15; --card:#1D2A1E; --text:#EBE7D8; --subtext:#97A08C; --accent:#7FB579; --accent-hover:#6BA164; --accent-light:#263521; --gold:#E0B75C; --gold-light:#33291A; --border:#2D3C2B; --danger:#E27E5F; --danger-light:#33231D; }
+/* --- THEMES (chosen via the Theme button, saved in localStorage) ---
+   "meadow" is the default and lives in :root. Every theme can set:
+     --on-accent : text colour on filled accent buttons (defaults to white)
+     --bg-art    : optional soft background glow / gradient
+   17 themes, one per colour mood: 8 light, 9 dark. */
+body { background-image: var(--bg-art, none); background-attachment: fixed; background-repeat: no-repeat; background-size: cover; }
+
+/* light */
 body[data-theme="sakura"] { --bg:#FBEFF1; --card:#FFF8F9; --text:#3D2530; --subtext:#86666F; --accent:#C9577F; --accent-hover:#B24570; --accent-light:#F7DCE5; --gold:#C98A4B; --gold-light:#F8E6D0; --border:#EBCFD6; --danger:#B5443A; --danger-light:#F6DCD8; }
 body[data-theme="ocean"] { --bg:#E6F1F4; --card:#F5FAFB; --text:#12303A; --subtext:#5B7882; --accent:#2C7A93; --accent-hover:#22647A; --accent-light:#D3E8EE; --gold:#B9852A; --gold-light:#F2E5C6; --border:#C4DBE2; --danger:#B5523A; --danger-light:#F4DED6; }
 body[data-theme="sunset"] { --bg:#FBEBDD; --card:#FFF6EC; --text:#40221A; --subtext:#8A6A5C; --accent:#C95A2C; --accent-hover:#B04D24; --accent-light:#F8DCC7; --gold:#B8862A; --gold-light:#F5E4BF; --border:#EAD0BA; --danger:#A93A35; --danger-light:#F5DAD5; }
 body[data-theme="lavender"] { --bg:#ECE8F5; --card:#F8F6FC; --text:#2A2440; --subtext:#70698C; --accent:#7A62B8; --accent-hover:#66509F; --accent-light:#DDD6EF; --gold:#B8892F; --gold-light:#F0E3C4; --border:#D6CEE8; --danger:#B04A52; --danger-light:#F4DCDD; }
-body[data-theme="midnight"] { --bg:#0E1424; --card:#161E33; --text:#E6EAF5; --subtext:#8D98B5; --accent:#7C9CFF; --accent-hover:#6687F0; --accent-light:#1F2B4A; --gold:#E6BE60; --gold-light:#2E2A1A; --border:#263352; --danger:#F08A78; --danger-light:#341F22; }
-body[data-theme="mocha"] { --bg:#1C1612; --card:#261E18; --text:#F0E6DA; --subtext:#A89886; --accent:#D9A066; --accent-hover:#C68E55; --accent-light:#3A2D22; --gold:#E6C170; --gold-light:#362B18; --border:#3A2E25; --danger:#E5826A; --danger-light:#3A2220; }
+body[data-theme="buttercream"] { --bg:#F5EEDB; --card:#FFFCF2; --text:#3C3322; --subtext:#82765E; --accent:#B68B45; --accent-hover:#A27A39; --accent-light:#EEE2C4; --gold:#9A7330; --gold-light:#F2E5C8; --border:#E4D8BB; --danger:#A84F3D; --danger-light:#F3DED4; --on-accent:#2B2314; }
+body[data-theme="paper"] { --bg:#EDECE8; --card:#FAFAF7; --text:#1F1F1D; --subtext:#77756F; --accent:#2F2F2D; --accent-hover:#1A1A19; --accent-light:#E1DFDA; --gold:#A6812F; --gold-light:#EFE6CF; --border:#D8D5CE; --danger:#B24A3C; --danger-light:#F3DFDA; }
+body[data-theme="coralcloud"] { --bg:#ECEFF4; --card:#F9FAFC; --text:#232A38; --subtext:#6C7588; --accent:#C74E3C; --accent-hover:#B0412F; --accent-light:#F8DDD7; --gold:#B58A3A; --gold-light:#F3E7CB; --border:#D9DFE9; --danger:#A83A44; --danger-light:#F5DCDF; }
 
-/* light-accent dark themes need dark text on filled accents */
-body[data-theme="night"] .pill-btn.primary, body[data-theme="midnight"] .pill-btn.primary, body[data-theme="mocha"] .pill-btn.primary,
-body[data-theme="night"] .preset-pill.active, body[data-theme="midnight"] .preset-pill.active, body[data-theme="mocha"] .preset-pill.active,
-body[data-theme="night"] .progress-bar-fill, body[data-theme="midnight"] .progress-bar-fill, body[data-theme="mocha"] .progress-bar-fill { color: var(--bg); }
+/* dark */
+body[data-theme="night"] { --bg:#141C15; --card:#1D2A1E; --text:#EBE7D8; --subtext:#97A08C; --accent:#7FB579; --accent-hover:#6BA164; --accent-light:#263521; --gold:#E0B75C; --gold-light:#33291A; --border:#2D3C2B; --danger:#E27E5F; --danger-light:#33231D; --on-accent:#141C15; }
+body[data-theme="deepsea"] { --bg:#06121F; --card:#0C2036; --text:#E3F0FB; --subtext:#88A4BD; --accent:#4DB2FF; --accent-hover:#36A0F0; --accent-light:#12324F; --gold:#E6C068; --gold-light:#2B2A1C; --border:#173653; --danger:#F08A78; --danger-light:#331F22; --on-accent:#06121F; }
+body[data-theme="mocha"] { --bg:#1C1612; --card:#261E18; --text:#F0E6DA; --subtext:#A89886; --accent:#D9A066; --accent-hover:#C68E55; --accent-light:#3A2D22; --gold:#E6C170; --gold-light:#362B18; --border:#3A2E25; --danger:#E5826A; --danger-light:#3A2220; --on-accent:#1C1612; }
+body[data-theme="aurora"] { --bg:#08141A; --card:#0F222B; --text:#E4F6F3; --subtext:#86A9AB; --accent:#5EEAD4; --accent-hover:#3FD6BE; --accent-light:#12343A; --gold:#F2C76B; --gold-light:#2B2A1C; --border:#1B3A44; --danger:#FF8A7A; --danger-light:#35201F; --on-accent:#06201C;
+  --bg-art: radial-gradient(1000px 520px at 12% -8%, rgba(94,234,212,.22), transparent 60%), radial-gradient(900px 520px at 95% 0%, rgba(167,139,250,.22), transparent 60%), radial-gradient(800px 400px at 50% 110%, rgba(56,189,248,.12), transparent 60%); }
+body[data-theme="cosmos"] { --bg:#0B0A1E; --card:#14132E; --text:#E9E8FA; --subtext:#9593C2; --accent:#8F8BFF; --accent-hover:#7B77F5; --accent-light:#211F4A; --gold:#FFD27A; --gold-light:#302A1C; --border:#26244F; --danger:#FF8A8A; --danger-light:#361F2A; --on-accent:#0B0A2A;
+  --bg-art:
+    radial-gradient(1.5px 1.5px at 8% 14%, rgba(255,255,255,.85), transparent 60%),
+    radial-gradient(1px 1px at 22% 62%, rgba(255,255,255,.7), transparent 60%),
+    radial-gradient(1.5px 1.5px at 36% 28%, rgba(255,255,255,.8), transparent 60%),
+    radial-gradient(1px 1px at 48% 80%, rgba(255,255,255,.6), transparent 60%),
+    radial-gradient(1.5px 1.5px at 63% 12%, rgba(255,255,255,.85), transparent 60%),
+    radial-gradient(1px 1px at 74% 55%, rgba(255,255,255,.7), transparent 60%),
+    radial-gradient(1.5px 1.5px at 86% 30%, rgba(255,255,255,.8), transparent 60%),
+    radial-gradient(1px 1px at 93% 84%, rgba(255,255,255,.65), transparent 60%),
+    radial-gradient(900px 500px at 80% -10%, rgba(143,139,255,.22), transparent 60%),
+    radial-gradient(700px 420px at 0% 100%, rgba(236,72,153,.12), transparent 60%); }
+body[data-theme="neon"] { --bg:#0D0820; --card:#170F33; --text:#F3EAFF; --subtext:#A593C9; --accent:#FF5CD1; --accent-hover:#F03DBE; --accent-light:#2C1550; --gold:#36E4F5; --gold-light:#0F2A3A; --border:#34205E; --danger:#FF7A8A; --danger-light:#3A1A2B; --on-accent:#1A0630;
+  --bg-art: radial-gradient(800px 480px at 0% 0%, rgba(255,92,209,.20), transparent 60%), radial-gradient(800px 480px at 100% 100%, rgba(54,228,245,.16), transparent 60%); }
+body[data-theme="ember"] { --bg:#170D0A; --card:#241410; --text:#F7E9E2; --subtext:#B39587; --accent:#FF7A45; --accent-hover:#F06A33; --accent-light:#3B1E14; --gold:#F5C451; --gold-light:#35280F; --border:#402519; --danger:#FF6B5E; --danger-light:#3B1D1A; --on-accent:#2A0E05;
+  --bg-art: radial-gradient(900px 500px at 50% 115%, rgba(255,122,69,.20), transparent 60%), radial-gradient(600px 300px at 100% 0%, rgba(245,196,81,.08), transparent 60%); }
+body[data-theme="dusk"] { --bg:#1A1030; --card:#261A40; --text:#F6EAF4; --subtext:#B7A3C6; --accent:#FFB070; --accent-hover:#FF9D52; --accent-light:#3A2456; --gold:#FFD08A; --gold-light:#3A2D22; --border:#3B2A5A; --danger:#FF8A95; --danger-light:#3A1E2E; --on-accent:#2A1236;
+  --bg-art: radial-gradient(900px 520px at 85% -10%, rgba(196,120,255,.28), transparent 60%), linear-gradient(180deg, transparent 45%, rgba(255,140,105,.16) 100%); }
+body[data-theme="graphite"] { --bg:#0B0B0C; --card:#151517; --text:#ECECEE; --subtext:#8E8E95; --accent:#E6E6E9; --accent-hover:#FFFFFF; --accent-light:#232326; --gold:#D9B86A; --gold-light:#2A2418; --border:#26262A; --danger:#F08A78; --danger-light:#30201E; --on-accent:#0B0B0C; }
+
+/* one rule for text on filled accent buttons, so every theme gets readable contrast */
+body .pill-btn.primary, body .preset-pill.active, body .mode-btn.active, body .progress-bar-fill { color: var(--on-accent, #fff); }
+
+/* theme picker: Light / Dark headings */
+.theme-group { grid-column: 1 / -1; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--subtext); margin-top: 6px; }
+.theme-group:first-child { margin-top: 0; }
 
 .theme-swatch { cursor: pointer; color: var(--text); border-width: 2px; }
 .theme-swatch:hover { border-color: var(--subtext); }
 .theme-swatch.sel { border-color: var(--accent); }
 
-body[data-theme="amethyst"] { --bg:#150E24; --card:#20163A; --text:#EDE6FA; --subtext:#A596C4; --accent:#B48CFF; --accent-hover:#A075F5; --accent-light:#2E2050; --gold:#E8C26A; --gold-light:#332A1E; --border:#33254F; --danger:#F0887A; --danger-light:#3A2126; }
-body[data-theme="deepsea"] { --bg:#06121F; --card:#0C2036; --text:#E3F0FB; --subtext:#88A4BD; --accent:#4DB2FF; --accent-hover:#36A0F0; --accent-light:#12324F; --gold:#E6C068; --gold-light:#2B2A1C; --border:#173653; --danger:#F08A78; --danger-light:#331F22; }
-body[data-theme="amethyst"] .pill-btn.primary, body[data-theme="deepsea"] .pill-btn.primary,
-body[data-theme="amethyst"] .preset-pill.active, body[data-theme="deepsea"] .preset-pill.active,
-body[data-theme="amethyst"] .progress-bar-fill, body[data-theme="deepsea"] .progress-bar-fill { color: var(--bg); }
 
 
 /* --- IN-PAGE MESSAGES (toasts + dialogs) --- */
@@ -614,3 +644,132 @@ body[data-theme="amethyst"] .progress-bar-fill, body[data-theme="deepsea"] .prog
 
 /* bonus (overtime) clock */
 .clock-display.overtime { color: var(--gold); }
+/* =====================================================================
+   v6 ADDITIONS: stopwatch mode, smooth plant growth, month chart, new themes
+   ===================================================================== */
+
+/* --- Timer / Stopwatch switch --- */
+.mode-switch {
+  display: flex;
+  width: max-content;
+  max-width: 100%;
+  gap: 4px;
+  padding: 4px;
+  margin: 14px auto 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+}
+.mode-btn {
+  background: transparent;
+  border: none;
+  color: var(--subtext);
+  padding: 7px 18px;
+  border-radius: 9999px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+.mode-btn:hover { color: var(--text); }
+.mode-btn.active { background: var(--accent); color: #fff; }
+.mode-btn:focus-visible, .mc-col:focus-visible, .year-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sw-hint { font-size: 0.85rem; color: var(--subtext); margin: 14px auto 0; max-width: 340px; line-height: 1.5; }
+
+/* --- Focus plant: grows smoothly, swaps stage with a slow fade (no flicker) --- */
+.glyph {
+  display: inline-block;
+  transform: scale(var(--grow, 1));
+  transition: transform 1.6s ease, opacity 0.8s ease, filter 0.8s ease;
+  will-change: transform;
+}
+.glyph.glyph-out {
+  opacity: 0;
+  transform: scale(calc(var(--grow, 1) * 0.6));
+  filter: blur(3px);
+}
+.glyph.glyph-in { animation: glyphIn 1.8s cubic-bezier(.2, .9, .3, 1.15); }
+@keyframes glyphIn {
+  0%   { opacity: 0; transform: scale(calc(var(--grow, 1) * 0.6)); filter: blur(3px); }
+  55%  { opacity: 1; transform: scale(calc(var(--grow, 1) * 1.12)); filter: blur(0); }
+  100% { opacity: 1; transform: scale(var(--grow, 1)); filter: blur(0); }
+}
+
+/* --- Stats tiles --- */
+.stat-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 14px;
+  margin-top: 22px;
+}
+.stat-tile {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.stat-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--subtext); }
+.stat-value { font-size: 1.9rem; color: var(--accent); font-variant-numeric: tabular-nums; line-height: 1.15; }
+.stat-track { width: 100%; height: 8px; background: var(--border); border-radius: 9999px; overflow: hidden; margin-top: 4px; }
+.stat-fill { height: 100%; width: 0; background: var(--accent); border-radius: 9999px; transition: width 0.8s ease; }
+.stat-goal { font-size: 0.75rem; color: var(--subtext); }
+
+/* --- Month-by-month chart --- */
+.chart-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; }
+.chart-sub { font-size: 0.85rem; color: var(--subtext); margin-top: 2px; }
+.year-nav { display: inline-flex; align-items: center; gap: 6px; }
+.year-label { font-family: 'Fraunces', serif; font-size: 1.1rem; min-width: 3.2em; text-align: center; font-variant-numeric: tabular-nums; }
+.year-btn {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 1px solid var(--border); background: var(--bg); color: var(--text);
+  font-size: 1.2rem; line-height: 1; cursor: pointer;
+}
+.year-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.year-btn:disabled { opacity: 0.35; cursor: default; }
+
+.month-chart { width: 100%; }
+.mc-plot { position: relative; height: 210px; margin-left: 46px; }
+.mc-grid { position: absolute; left: 0; right: 0; height: 0; border-top: 1px dashed var(--border); }
+.mc-grid:first-child { border-top-style: solid; }
+.mc-grid span { position: absolute; right: calc(100% + 8px); top: -0.55em; font-size: 0.68rem; color: var(--subtext); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.mc-bars { position: absolute; inset: 0; display: flex; gap: 6px; }
+.mc-col {
+  flex: 1; min-width: 0; height: 100%;
+  display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
+  background: transparent; border: none; border-radius: 8px 8px 0 0; padding: 0 3px; cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.mc-col:hover:not(:disabled) { background: var(--accent-light); }
+.mc-col.sel { background: var(--accent-light); }
+.mc-col.future, .mc-col:disabled { cursor: default; opacity: 0.5; }
+.mc-fill { width: 100%; max-width: 34px; background: var(--accent); opacity: 0.6; border-radius: 6px 6px 0 0; transform-origin: bottom; }
+.mc-col.sel .mc-fill, .mc-col:hover .mc-fill { opacity: 1; }
+.month-chart.animate .mc-fill { animation: barGrow 0.9s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i, 0) * 45ms); }
+@keyframes barGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.mc-months { display: flex; gap: 6px; margin: 8px 0 0 46px; }
+.mc-months span { flex: 1; text-align: center; font-size: 0.72rem; color: var(--subtext); }
+.mc-months span.sel { color: var(--accent); font-weight: 700; }
+.sync-note { margin-top: 10px; text-align: center; font-size: 0.8rem; color: var(--subtext); }
+.month-readout { margin-top: 16px; text-align: center; font-size: 0.92rem; color: var(--text); min-height: 1.4em; }
+
+@media (max-width: 600px) {
+  .mc-plot { height: 170px; margin-left: 38px; }
+  .mc-months { margin-left: 38px; gap: 3px; }
+  .mc-bars { gap: 3px; }
+  .mc-col { padding: 0 1px; }
+  .mc-months span { font-size: 0.6rem; }
+  .stat-value { font-size: 1.6rem; }
+}
+
+
+/* --- respect "reduce motion" --- */
+@media (prefers-reduced-motion: reduce) {
+  .plant-avatar, .msg-icon { animation: none; }
+  .glyph, .stat-fill { transition: none; }
+  .glyph.glyph-in, .month-chart.animate .mc-fill { animation: none; }
+}

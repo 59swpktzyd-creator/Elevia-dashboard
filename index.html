@@ -5,8 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Elevia — Personal Focus Dashboard</title>
   
-  <link rel="stylesheet" href="style.css?v=6">
-  <link rel="stylesheet" href="elevia-upgrades.css?v=1">
+  <meta name="description" content="Elevia: a calm focus dashboard with a growing plant companion, goals and study stats.">
+  <meta name="theme-color" content="#EFEAD9">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%B1%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css?v=8">
 
   <!-- External Libraries -->
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -68,7 +70,17 @@
   </style>
 </head>
 <body>
-<script>try{document.body.dataset.theme=localStorage.getItem("theme")||"meadow"}catch(e){}</script>
+<script>
+try {
+  // Themes that were merged into a similar one keep working for returning visitors.
+  var __old = { midnight: 'deepsea', amethyst: 'cosmos', berry: 'cosmos', rosegold: 'sakura', rosewater: 'sakura',
+                frost: 'ocean', powderblue: 'ocean', mint: 'meadow', sage: 'meadow', matcha: 'meadow', honey: 'buttercream' };
+  var __t = localStorage.getItem("theme");
+  __t = __old[__t] || __t;
+  if (__t) localStorage.setItem("theme", __t);
+  document.body.dataset.theme = __t || "meadow";
+} catch (e) { document.body.dataset.theme = "meadow"; }
+</script>
 
   <!-- NAVIGATION BAR -->
   <nav class="navbar">
@@ -227,14 +239,14 @@
         <div id="timerCardContainer" class="card fullscreen-target" style="position: relative; width: 100%; text-align: center; padding: 32px;">
           <button class="fullscreen-icon" onclick="toggleFullscreen('timerCardContainer')" title="Expand Focus Session">⛶</button>
           <span class="badge">Focus Session</span>
-          
-          <div class="plant-avatar" id="focusPlantDisplay" style="font-size: 4rem; margin: 12px 0 0 0;">🌱</div>
-          <p id="focusPlantStatus" style="font-size: 0.85rem; color: var(--subtext); margin-bottom: 12px;">Keep studying to help me grow!</p>
 
-          <div class="focus-mode-switch" role="group" aria-label="Focus timer mode">
-            <button id="countdownModeBtn" class="focus-mode-btn active" onclick="setFocusMode('countdown')">⏳ Countdown</button>
-            <button id="countupModeBtn" class="focus-mode-btn" onclick="setFocusMode('countup')">⏱ Count up</button>
+          <div class="mode-switch" role="group" aria-label="Focus mode">
+            <button id="modeTimerBtn" class="mode-btn active" aria-pressed="true" onclick="setMode('timer')">⏳ Timer</button>
+            <button id="modeSwBtn" class="mode-btn" aria-pressed="false" onclick="setMode('stopwatch')">⏱️ Stopwatch</button>
           </div>
+
+          <div class="plant-avatar" id="focusPlantDisplay" style="font-size: 4rem; margin: 12px 0 0 0;"><span id="focusGlyph" class="glyph">🌱</span></div>
+          <p id="focusPlantStatus" style="font-size: 0.85rem; color: var(--subtext); margin-bottom: 12px;">Keep studying to help me grow!</p>
 
           <div class="timer-presets" id="timerPresets">
             <button class="preset-pill active" onclick="setTimerDuration(5)">5m</button>
@@ -247,12 +259,14 @@
             </div>
           </div>
 
+          <p id="swHint" class="sw-hint" style="display: none;">No target, no countdown. It counts up from zero. Press Finish when you are done and your time is saved.</p>
+
           <div id="timerDisplay" class="clock-display">05:00</div>
 
-          <div style="display: flex; gap: 12px; justify-content: center;">
+          <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
             <button id="startTimerBtn" onclick="handleTimerToggle()" class="pill-btn primary" style="padding: 12px 32px; font-size: 1rem;">Start Focus</button>
-            <button onclick="requestTimerReset()" class="pill-btn ghost">Reset</button>
-            <button id="finishCountUpBtn" onclick="finishCountUpSession()" class="pill-btn primary" style="display:none;">Finish & Save</button>
+            <button id="finishSwBtn" onclick="finishStopwatch()" class="pill-btn" style="display: none; padding: 12px 24px; font-size: 1rem;">✅ Finish and save</button>
+            <button id="resetTimerBtn" onclick="requestTimerReset()" class="pill-btn ghost">Reset</button>
           </div>
         </div>
 
@@ -261,49 +275,52 @@
 
     <!-- PAGE 4: STATS & ANALYTICS -->
     <section id="page-stats" class="page">
-      <div class="card" style="text-align: center; margin-bottom: 24px;">
+      <div class="card" style="text-align: center;">
         <h2 class="cute-title" style="font-size: 2rem;">Focus Analytics</h2>
         <p style="color: var(--subtext);">Track your personal consistency and progress milestones.</p>
-    
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 24px;">
-      <div style="background: var(--bg); padding: 16px; border-radius: 16px; border: 1px solid var(--border);">
-        <span style="font-size: 0.8rem; font-weight: 700; color: var(--subtext); text-transform: uppercase;">Today</span>
-        <h3 class="stat-time-value" id="todayFocusTime">0m</h3>
-        <div style="width: 100%; background: var(--border); height: 6px; border-radius: 3px; overflow: hidden;">
-          <div id="todayProgress" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.3s;"></div>
+
+        <div class="stat-tiles">
+          <div class="stat-tile">
+            <span class="stat-label">Today</span>
+            <h3 class="stat-value" id="todayFocusTime">0m</h3>
+            <div class="stat-track"><div id="todayProgress" class="stat-fill"></div></div>
+            <span class="stat-goal">Goal: 1h</span>
+          </div>
+          <div class="stat-tile">
+            <span class="stat-label">This Week</span>
+            <h3 class="stat-value" id="weeklyFocusTime">0m</h3>
+            <div class="stat-track"><div id="weeklyProgress" class="stat-fill"></div></div>
+            <span class="stat-goal">Goal: 5h</span>
+          </div>
+          <div class="stat-tile">
+            <span class="stat-label">This Month</span>
+            <h3 class="stat-value" id="monthlyFocusTime">0m</h3>
+            <div class="stat-track"><div id="monthlyProgress" class="stat-fill"></div></div>
+            <span class="stat-goal">Goal: 20h</span>
+          </div>
         </div>
       </div>
 
-      <div style="background: var(--bg); padding: 16px; border-radius: 16px; border: 1px solid var(--border);">
-        <span style="font-size: 0.8rem; font-weight: 700; color: var(--subtext); text-transform: uppercase;">This Week</span>
-        <h3 class="stat-time-value" id="weeklyFocusTime">0m</h3>
-        <div style="width: 100%; background: var(--border); height: 6px; border-radius: 3px; overflow: hidden;">
-          <div id="weeklyProgress" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.3s;"></div>
+      <div class="card">
+        <div class="chart-head">
+          <div>
+            <h3 class="cute-title" style="font-size: 1.3rem;">Month by month</h3>
+            <p id="chartYearTotal" class="chart-sub"></p>
+          </div>
+          <div class="year-nav">
+            <button id="yearPrev" class="year-btn" onclick="shiftChartYear(-1)" aria-label="Previous year">‹</button>
+            <span id="chartYearLabel" class="year-label">2026</span>
+            <button id="yearNext" class="year-btn" onclick="shiftChartYear(1)" aria-label="Next year">›</button>
+          </div>
         </div>
+        <div id="monthChart" class="month-chart" role="group" aria-label="Focus time for each month"></div>
+        <p id="monthReadout" class="month-readout"></p>
+        <p id="syncNote" class="sync-note">Saved on this device only. Sign in to back up your stats and see them on any device.</p>
       </div>
 
-      <div style="background: var(--bg); padding: 16px; border-radius: 16px; border: 1px solid var(--border);">
-        <span style="font-size: 0.8rem; font-weight: 700; color: var(--subtext); text-transform: uppercase;">This Month</span>
-        <h3 class="stat-time-value" id="monthlyFocusTime">0m</h3>
-        <div style="width: 100%; background: var(--border); height: 6px; border-radius: 3px; overflow: hidden;">
-          <div id="monthlyProgress" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.3s;"></div>
-        </div>
+      <div style="text-align: center;">
+        <button onclick="resetStats()" class="delete-ghost" style="font-size: 0.85rem;">Reset Stats Data</button>
       </div>
-    </div>
-
-    <div class="monthly-chart-card">
-      <div class="monthly-chart-heading">
-        <div>
-          <h3 class="cute-title">Your study journey</h3>
-          <p class="chart-subtitle">Focus time over the last 12 months</p>
-        </div>
-        <span id="chartTotalTime" class="badge">0m total</span>
-      </div>
-      <div id="monthlyFocusChart" class="monthly-focus-chart" role="img" aria-label="Monthly focus time chart"></div>
-    </div>
-
-    <button onclick="resetStats()" class="delete-ghost" style="margin-top: 20px; font-size: 0.85rem;">Reset Stats Data</button>
-  </div>
     </section>
 
   </main>
@@ -347,7 +364,7 @@
       <p style="color: var(--subtext); font-size: 0.95rem;">If you quit now, your plant will wither and active session points won't be saved!</p>
       <div class="warning-actions">
         <button onclick="closeWarningModal()" class="pill-btn ghost">Keep Going</button>
-        <button onclick="confirmStopTimer()" class="pill-btn danger">Quit & Wither 🥀</button>
+        <button onclick="confirmStopTimer()" class="pill-btn danger">Quit &amp; Wither 🥀</button>
       </div>
     </div>
   </div>
@@ -368,6 +385,7 @@
       else document.getElementById('page-home')?.classList.add('active-page');
 
       if (activeNav) activeNav.classList.add('active');
+      if (targetPage === 'stats') renderMonthChart(true);
     }
 
     window.addEventListener('hashchange', handleRouting);
@@ -380,6 +398,7 @@
         });
       });
 
+      applyTheme(document.body.dataset.theme);
       handleRouting();
       displayQuote();
       startLiveClock();
@@ -388,6 +407,7 @@
 
       hasCelebrated = goals.length > 0 && goals.every(g => g.done);
       renderGoals();
+      applyMode();
       restoreSession();
 
       // Goal Listeners
@@ -436,18 +456,21 @@
       { id: 'tree', name: 'Bonsai Tree', icon: '🌳', price: 200, w: 6, s: 6 },
       { id: 'pine', name: 'Pine', icon: '🌲', price: 220, w: 3, s: 4 }
     ];
-    const num = (k, d) => { const v = localStorage.getItem(k); return v === null ? d : Number(v); };
+    const num = (k, d) => { const v = localStorage.getItem(k); const n = Number(v); return v === null || !isFinite(n) ? d : n; };
+    // Never let one bad value in localStorage break the whole app.
+    const readJSON = (k, fallback) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? fallback : v; } catch (e) { return fallback; } };
     const currentPlant = () => PLANT_CATALOG.find(p => p.id === activePlantId) || PLANT_CATALOG[0];
 
     let userPoints = Number(localStorage.getItem('userPoints')) || 0;
-    let unlockedPlants = JSON.parse(localStorage.getItem('unlockedPlants')) || ['sprout'];
+    let unlockedPlants = (() => { const a = readJSON('unlockedPlants', []); return Array.isArray(a) ? [...new Set(['sprout', ...a])] : ['sprout']; })();
     let activePlantId = localStorage.getItem('activePlantId') || 'sprout';
     let plantWater = num('plantWater', 50);
     let plantSun = num('plantSun', 50);
     let plantHealth = num('plantHealth', 100);
     let lastPlantTick = num('lastPlantTick', Date.now());
     let isWithered = localStorage.getItem('isWithered') === 'true';
-    let forest = (JSON.parse(localStorage.getItem('forestGarden')) || []).map(f => typeof f === 'string' ? { icon: f, name: 'Plant', withered: false } : f);
+    let lastForestSig = '';
+    let forest = (() => { const a = readJSON('forestGarden', []); return (Array.isArray(a) ? a : []).filter(Boolean).map(f => typeof f === 'string' ? { icon: f, name: 'Plant', withered: false } : f); })();
     const saveForest = () => localStorage.setItem('forestGarden', JSON.stringify(forest));
 
     function initPlantSystem() {
@@ -511,7 +534,6 @@
       const iconEl = document.getElementById('plantDisplay');
       const nameEl = document.getElementById('plantName');
       const statusEl = document.getElementById('plantStatus');
-      const focusIconEl = document.getElementById('focusPlantDisplay');
       const focusStatusEl = document.getElementById('focusPlantStatus');
       const waterBar = document.getElementById('waterBar');
       const sunBar = document.getElementById('sunBar');
@@ -519,17 +541,21 @@
       const sunVal = document.getElementById('sunValue');
 
       if (isWithered) {
-        if (iconEl && iconEl.textContent !== '🥀') iconEl.textContent = '🥀';
+        if (iconEl) iconEl.textContent = '🥀';
         if (nameEl) nameEl.textContent = 'Withered Plant';
         if (statusEl) statusEl.textContent = 'Withered! Tap Revive Plant or complete a session.';
-        if (focusIconEl && focusIconEl.textContent !== '🥀') focusIconEl.textContent = '🥀';
-        if (focusStatusEl && focusStatusEl.textContent !== 'Your plant is withered. Finish a session to save it!') focusStatusEl.textContent = 'Your plant is withered. Finish a session to save it!';
+        if (!isRunning) {
+          setFocusGlyph('🥀', 1);
+          if (focusStatusEl) focusStatusEl.textContent = 'Your plant is withered. Finish a session to save it!';
+        }
       } else {
-        if (iconEl && iconEl.textContent !== current.icon) iconEl.textContent = current.icon;
+        if (iconEl) iconEl.textContent = current.icon;
         if (nameEl) nameEl.textContent = current.name;
         if (statusEl) statusEl.textContent = plantWater < 25 ? "I'm thirsty! 💧" : plantSun < 25 ? 'I need some sun ☀️' : plantHealth < 40 ? "I'm not feeling well..." : 'Happy and healthy!';
-        if (focusIconEl && focusIconEl.textContent !== current.icon) focusIconEl.textContent = current.icon;
-        if (focusStatusEl && !isRunning && focusStatusEl.textContent !== 'Keep studying to help me grow!') focusStatusEl.textContent = 'Keep studying to help me grow!';
+        if (!isRunning) {
+          setFocusGlyph(current.icon, 1);
+          if (focusStatusEl) focusStatusEl.textContent = 'Keep studying to help me grow!';
+        }
       }
 
       const W = Math.round(plantWater), S = Math.round(plantSun), H = Math.round(plantHealth);
@@ -558,7 +584,9 @@
       if (forestCount) forestCount.textContent = `${forest.length - dead} Grown · ${dead} Withered`;
       const clr = document.getElementById('clearWitheredBtn');
       if (clr) clr.style.display = dead ? '' : 'none';
-      if (forestGrid) {
+      const sig = forest.map(f => (f.withered ? 'w' : 'g') + f.icon).join('');
+      if (forestGrid && sig !== lastForestSig) {
+        lastForestSig = sig;
         forestGrid.innerHTML = forest.length
           ? forest.map((t, i) => t.withered
             ? `<span title="${esc(t.name || 'Plant')} (withered) - click to remove" onclick="removeWithered(${i})" style="font-size: 1.8rem; filter: grayscale(1); opacity: 0.6; cursor: pointer;">🥀</span>`
@@ -673,7 +701,7 @@
     }
 
     // --- 4. GOALS LOGIC ---
-    let goals = JSON.parse(localStorage.getItem('goals') || '[]');
+    let goals = (() => { const a = readJSON('goals', []); return (Array.isArray(a) ? a : []).filter(g => g && typeof g.text === 'string'); })();
     const saveGoals = () => localStorage.setItem('goals', JSON.stringify(goals));
 
     function renderGoals() {
@@ -788,10 +816,12 @@
       setInterval(updateLiveClock, 1000);
     }
 
-    // --- 6. FOCUS TIMER (timestamp-based: pausable, accurate in background, survives refresh) ---
+    // --- 6. FOCUS TIMER + STOPWATCH (timestamp-based: pausable, accurate in background, survives refresh) ---
     const ORIG_TITLE = document.title;
     let selectedMinutes = 5, remaining = 300, isRunning = false, isPaused = false, endTime = null, ticker = null;
-    let focusMode = 'countdown', countUpElapsed = 0, countUpLastTick = 0;
+
+    // Two ways to focus: a countdown "timer", or an open-ended "stopwatch" that counts up from zero.
+    let focusMode = localStorage.getItem('focusMode') === 'stopwatch' ? 'stopwatch' : 'timer';
 
     // Bonus time: when the countdown hits 0 the session is already won (points + plant).
     // The clock then counts UP, and the extra minutes are added when you press Finish.
@@ -799,16 +829,24 @@
     const OVERTIME_CAP_MIN = 30;
     let isOvertime = false, overtimeSecs = 0, lastOT = 0;
 
+    // Stopwatch: no target. Time is only saved when you press Finish.
+    // Same safety rules: sleep / closed-page gaps are not counted, and a forgotten stopwatch stops at 12 h.
+    const SW_CAP_HOURS = 12;
+    const SW_TREE_MIN = 10; // a session of at least this long also plants a tree
+    let swSecs = 0, swLast = 0;
+
     // A Web Worker keeps ticking at full speed even when the tab is in the background.
     function startTicker() {
       stopTicker();
       try {
-        ticker = new Worker(URL.createObjectURL(new Blob(['setInterval(()=>postMessage(1),1000)'], { type: 'text/javascript' })));
+        const url = URL.createObjectURL(new Blob(['setInterval(()=>postMessage(1),1000)'], { type: 'text/javascript' }));
+        ticker = new Worker(url);
+        ticker._url = url;
         ticker.onmessage = tick;
       } catch (e) { ticker = setInterval(tick, 1000); }
     }
     function stopTicker() {
-      if (ticker && ticker.terminate) ticker.terminate(); else if (ticker) clearInterval(ticker);
+      if (ticker && ticker.terminate) { ticker.terminate(); if (ticker._url) URL.revokeObjectURL(ticker._url); } else if (ticker) clearInterval(ticker);
       ticker = null;
     }
 
@@ -829,38 +867,49 @@
 
     function saveSession() {
       if (!isRunning) localStorage.removeItem('focusSession');
-      else localStorage.setItem('focusSession', JSON.stringify({ selectedMinutes, remaining, endTime, isPaused, isOvertime, overtimeSecs, lastOT, focusMode, countUpElapsed, countUpLastTick }));
+      else localStorage.setItem('focusSession', JSON.stringify({ mode: focusMode, selectedMinutes, remaining, endTime, isPaused, isOvertime, overtimeSecs, lastOT, swSecs, swLast, lastSeen: Date.now() }));
     }
 
     function setBtn() {
       const b = document.getElementById('startTimerBtn');
+      const fin = document.getElementById('finishSwBtn');
+      const rst = document.getElementById('resetTimerBtn');
+      const sw = focusMode === 'stopwatch';
+      if (fin) fin.style.display = sw && isRunning ? '' : 'none';
+      if (rst) rst.textContent = sw && isRunning ? 'Discard' : 'Reset';
       if (!b) return;
       if (isOvertime) { const m = Math.floor(overtimeSecs / 60); b.textContent = `✅ Finish${m ? ` (+${m} min)` : ''}`; return; }
+      if (sw) { b.textContent = !isRunning ? 'Start Studying' : isPaused ? '▶ Resume' : '⏸ Pause'; return; }
       b.textContent = !isRunning ? 'Start Focus' : isPaused ? '▶ Resume' : '⏸ Pause';
-      const finishBtn = document.getElementById('finishCountUpBtn');
-      if (finishBtn) finishBtn.style.display = focusMode === 'countup' && isRunning ? '' : 'none';
     }
 
-    function setFocusMode(mode) {
-      if (!['countdown', 'countup'].includes(mode)) return;
-      if (isRunning) {
-        notify('Finish your current session first', 'You can switch modes once this focus session has ended.', 'warn');
-        return;
-      }
-      focusMode = mode;
-      document.getElementById('countdownModeBtn')?.classList.toggle('active', mode === 'countdown');
-      document.getElementById('countupModeBtn')?.classList.toggle('active', mode === 'countup');
+    // --- mode switch (Timer / Stopwatch) ---
+    function applyMode() {
+      const sw = focusMode === 'stopwatch';
+      const tBtn = document.getElementById('modeTimerBtn');
+      const sBtn = document.getElementById('modeSwBtn');
+      if (tBtn) { tBtn.classList.toggle('active', !sw); tBtn.setAttribute('aria-pressed', String(!sw)); }
+      if (sBtn) { sBtn.classList.toggle('active', sw); sBtn.setAttribute('aria-pressed', String(sw)); }
       const presets = document.getElementById('timerPresets');
-      if (presets) presets.style.display = mode === 'countdown' ? 'flex' : 'none';
-      countUpElapsed = 0;
-      updateClockDisplay();
-      setBtn();
-      updateFocusPlantGrowth();
+      const hint = document.getElementById('swHint');
+      if (presets) presets.style.display = sw ? 'none' : '';
+      if (hint) hint.style.display = sw ? '' : 'none';
+      setBtn(); updateClockDisplay(); updateFocusPlantGrowth();
     }
 
+    function setMode(m) {
+      if (m === focusMode) return;
+      if (isRunning) { notify('Finish your current session first', 'You can switch between Timer and Stopwatch once it has ended.', 'warn'); return; }
+      focusMode = m;
+      localStorage.setItem('focusMode', m);
+      applyMode();
+      renderPlant();
+    }
+
+    let pendingMins = null;
     function setTimerDuration(mins) {
       if (isOvertime) { notify('Finish your bonus time first', 'Press Finish to collect it, then pick a new time.', 'warn'); return; }
-      if (isRunning) { document.getElementById('warningModal')?.classList.add('active'); return; }
+      if (isRunning) { pendingMins = mins; document.getElementById('warningModal')?.classList.add('active'); return; }
       selectedMinutes = mins;
       remaining = mins * 60;
       updateClockDisplay();
@@ -880,107 +929,65 @@
 
     function handleTimerToggle() {
       if (isOvertime) finishOvertime();
-      else if (focusMode === 'countup') {
-        if (!isRunning) startCountUp();
-        else if (isPaused) resumeCountUp();
-        else pauseCountUp();
-      } else if (!isRunning) startTimer();
+      else if (!isRunning) startTimer();
       else if (isPaused) resumeTimer();
       else pauseTimer();
     }
 
-    function startCountUp() {
-      isRunning = true; isPaused = false;
-      countUpLastTick = Date.now();
-      startTicker(); setBtn(); saveSession(); updateClockDisplay(); updateFocusPlantGrowth(); requestWake();
+    // --- focus plant: smooth growth, no flicker ---
+    // The plant grows continuously (scale) and only swaps emoji at 3 milestones,
+    // using a slow fade-out / grow-in instead of an abrupt swap.
+    let glyphTimer = null;
+    function setFocusGlyph(icon, grow = 1) {
+      const g = document.getElementById('focusGlyph');
+      if (!g) return;
+      g.style.setProperty('--grow', grow.toFixed(3));
+      if (g.dataset.icon === icon) return; // same stage: touch nothing
+      const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (!g.dataset.icon || reduce) { g.textContent = icon; g.dataset.icon = icon; return; }
+      g.dataset.icon = icon; // the stage we are heading to
+      clearTimeout(glyphTimer);
+      g.classList.remove('glyph-in');
+      g.classList.add('glyph-out');
+      glyphTimer = setTimeout(() => {
+        g.textContent = g.dataset.icon;
+        g.classList.remove('glyph-out');
+        g.classList.add('glyph-in');
+      }, 800);
     }
 
-    function pauseCountUp() {
-      tickCountUp();
-      if (!isRunning) return;
-      stopTicker(); isPaused = true; countUpLastTick = 0;
-      setBtn(); saveSession(); updateFocusPlantGrowth(); releaseWake();
-    }
-
-    function resumeCountUp() {
-      isPaused = false; countUpLastTick = Date.now();
-      startTicker(); setBtn(); saveSession(); updateFocusPlantGrowth(); requestWake();
-    }
-
-    function tickCountUp() {
-      if (!isRunning || isPaused || !countUpLastTick) return;
-      const now = Date.now();
-      const delta = (now - countUpLastTick) / 1000;
-      countUpLastTick = now;
-      // Ignore long gaps caused by a sleeping computer or a closed browser tab.
-      if (delta > 0 && delta <= 90) countUpElapsed += delta;
-      updateClockDisplay();
-      updateFocusPlantGrowth();
-      saveSession();
-    }
-
-    function finishCountUpSession() {
-      if (focusMode !== 'countup' || !isRunning) return;
-      tickCountUp();
-      stopTicker(); releaseWake();
-      const minutes = Math.round(countUpElapsed / 60);
-      isRunning = false; isPaused = false; countUpLastTick = 0;
-      localStorage.removeItem('focusSession');
-      if (minutes > 0) {
-        const earned = Math.max(1, Math.round((minutes / 30) * 10));
-        userPoints += earned; updatePointsDisplay();
-        const plant = currentPlant();
-        forest.push({ icon: plant.icon, name: plant.name, withered: false, t: Date.now() });
-        saveForest();
-        if (isWithered) {
-          isWithered = false; plantHealth = 60;
-          plantWater = Math.max(plantWater, 50); plantSun = Math.max(plantSun, 50);
-        }
-        recordCompletedFocusTime(minutes);
-        if (typeof confetti === 'function') confetti({ particleCount: 70, spread: 65 });
-        playChime();
-        notify('Focus session saved!', `${formatFocusTime(minutes)} added to your stats and 🪙 ${earned} points earned.`, 'success');
-      } else {
-        notify('Very short session', 'Less than 30 seconds of focus was recorded, so no study time was added.', 'warn');
-      }
-      countUpElapsed = 0;
-      setBtn(); updateClockDisplay(); renderPlant(); updateFocusPlantGrowth();
+    function setFocusStatus(text) {
+      const el = document.getElementById('focusPlantStatus');
+      if (el && el.textContent !== text) el.textContent = text;
     }
 
     function updateFocusPlantGrowth() {
-      const icon = document.getElementById('focusPlantDisplay');
-      const status = document.getElementById('focusPlantStatus');
-      if (!icon || !isRunning) return;
+      if (!isRunning) return; // when idle, renderPlant() owns the plant
       if (isOvertime) {
-        if (icon.textContent !== currentPlant().icon) icon.textContent = currentPlant().icon;
-        if (status && status.textContent !== `Bonus time! 🌟 Press Finish to collect it (auto-ends after ${OVERTIME_CAP_MIN} min).`) status.textContent = `Bonus time! 🌟 Press Finish to collect it (auto-ends after ${OVERTIME_CAP_MIN} min).`;
+        setFocusGlyph(currentPlant().icon, 1);
+        setFocusStatus(`Bonus time! 🌟 Press Finish to collect it (auto-ends after ${OVERTIME_CAP_MIN} min).`);
         return;
       }
-      if (isPaused) { if (status) status.textContent = 'Paused. Resume when you are ready.'; return; }
-      if (focusMode === 'countup') {
-        const mins = Math.floor(countUpElapsed / 60);
-        const [stage, message] = mins < 5 ? ['🌰', 'A little time is still progress.']
-          : mins < 15 ? ['🌱', 'You are building momentum...']
-          : mins < 30 ? ['🌿', 'Look at you growing!']
-          : [currentPlant().icon, 'Deep focus. Keep going!'];
-        if (icon.textContent !== stage) icon.textContent = stage;
-        if (status && status.textContent !== message) status.textContent = message;
-        return;
-      }
-      const total = selectedMinutes * 60;
-      const pct = total > 0 ? Math.max(0, total - remaining) / total : 0;
-      const [i, t] = pct < 0.2 ? ['🌰', 'A tiny seed, just planted...']
-        : pct < 0.5 ? ['🌱', 'Sprouting! Keep going...']
-        : pct < 0.85 ? ['🌿', 'Growing steadily...']
-        : [currentPlant().icon, 'Almost fully grown!'];
-      if (icon.textContent !== i) icon.textContent = i;
-      if (status && status.textContent !== t) status.textContent = t;
+      if (isPaused) { setFocusStatus('Paused. Resume when you are ready.'); return; }
+
+      const sw = focusMode === 'stopwatch';
+      let pct;
+      if (sw) pct = Math.min(1, swSecs / 1800); // the stopwatch plant is fully grown after 30 min
+      else { const total = selectedMinutes * 60; pct = total > 0 ? Math.max(0, total - remaining) / total : 0; }
+
+      const stages = sw
+        ? [['🌰', 'A tiny seed, just planted. Study as long as you like...'], ['🌱', 'Sprouting! No rush, keep going...'], ['🌿', 'Growing steadily...'], [currentPlant().icon, 'Fully grown! Finish whenever you are ready.']]
+        : [['🌰', 'A tiny seed, just planted...'], ['🌱', 'Sprouting! Keep going...'], ['🌿', 'Growing steadily...'], [currentPlant().icon, 'Almost fully grown!']];
+      const [i, t] = pct < 0.2 ? stages[0] : pct < 0.5 ? stages[1] : pct < 0.85 ? stages[2] : stages[3];
+      setFocusGlyph(i, 0.62 + 0.38 * pct);
+      setFocusStatus(t);
     }
 
     function startTimer() {
       isRunning = true; isPaused = false;
-      endTime = Date.now() + remaining * 1000;
-      startTicker(); setBtn(); saveSession(); updateFocusPlantGrowth(); requestWake();
+      if (focusMode === 'stopwatch') { swSecs = 0; swLast = Date.now(); endTime = null; }
+      else endTime = Date.now() + remaining * 1000;
+      startTicker(); setBtn(); saveSession(); updateClockDisplay(); updateFocusPlantGrowth(); requestWake();
     }
 
     function pauseTimer() {
@@ -993,10 +1000,79 @@
 
     function resumeTimer() {
       isPaused = false;
-      endTime = Date.now() + remaining * 1000;
+      if (focusMode === 'stopwatch') swLast = Date.now();
+      else endTime = Date.now() + remaining * 1000;
       startTicker(); setBtn(); saveSession(); updateFocusPlantGrowth(); requestWake();
     }
 
+    // --- stopwatch ---
+    function accrueSW() {
+      const now = Date.now();
+      const delta = (now - swLast) / 1000;
+      swLast = now;
+      // gaps over 90s mean the PC slept or the page was closed: that time is NOT counted
+      if (delta > 0 && delta <= 90) swSecs += delta;
+      swSecs = Math.min(swSecs, SW_CAP_HOURS * 3600);
+    }
+
+    function tickStopwatch() {
+      if (!isRunning || isPaused) return;
+      accrueSW();
+      if (swSecs >= SW_CAP_HOURS * 3600) return finishStopwatch(true);
+      updateClockDisplay(); updateFocusPlantGrowth(); saveSession();
+    }
+
+    function finishStopwatch(auto = false) {
+      if (focusMode !== 'stopwatch' || !isRunning) return;
+      if (!isPaused) accrueSW();
+      const mins = Math.floor(swSecs / 60);
+      const pts = Math.round(mins / 3); // same rate as the timer: 10 points per 30 min
+      stopTicker(); releaseWake();
+      isRunning = false; isPaused = false; swSecs = 0; swLast = 0;
+      saveSession();
+
+      let planted = false, revived = false;
+      if (mins >= 1) {
+        userPoints += pts;
+        updatePointsDisplay();
+        if (mins >= SW_TREE_MIN) {
+          const p = currentPlant();
+          forest.push({ icon: p.icon, name: p.name, withered: false, t: Date.now() });
+          saveForest();
+          planted = true;
+          if (isWithered) {
+            isWithered = false; plantHealth = 60;
+            plantWater = Math.max(plantWater, 50); plantSun = Math.max(plantSun, 50);
+            revived = true;
+          }
+        }
+        recordCompletedFocusTime(mins);
+        if (typeof confetti === 'function') confetti({ particleCount: 90, spread: 75 });
+      }
+      setBtn(); updateClockDisplay(); renderPlant();
+
+      if (mins < 1) return notify('Nothing saved', 'That was under a minute, so it was not counted.', 'info');
+      const parts = [`${fmtDur(mins)} of study time saved`];
+      if (pts) parts.push(`🪙 ${pts} points earned`);
+      let msg = parts.join(' and ') + '.';
+      if (revived) msg += ' Your plant has been revived.';
+      else if (planted) msg += ' A new tree joined your forest.';
+      if (auto) {
+        playChime();
+        showMessage('Stopwatch maxed out', `${msg} The stopwatch stops at ${SW_CAP_HOURS} hours so a forgotten session can't pile up time.`, '⏰');
+      } else {
+        showMessage('Session saved', msg, '🎉');
+      }
+    }
+
+    function discardStopwatch() {
+      stopTicker(); releaseWake();
+      isRunning = false; isPaused = false; swSecs = 0; swLast = 0;
+      saveSession();
+      setBtn(); updateClockDisplay(); renderPlant();
+    }
+
+    // --- countdown bonus time ---
     function accrueOvertime() {
       const now = Date.now();
       const delta = (now - lastOT) / 1000;
@@ -1043,12 +1119,13 @@
     }
 
     function tick() {
+      if (focusMode === 'stopwatch') return tickStopwatch();
       if (isOvertime) return tickOvertime();
-      if (focusMode === 'countup') return tickCountUp();
       if (!isRunning || isPaused || !endTime) return;
       remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
       updateClockDisplay();
       updateFocusPlantGrowth();
+      if (remaining > 0) saveSession(); // keeps "last seen" fresh so a closed page can't earn credit
       if (remaining <= 0) completeSession();
     }
 
@@ -1079,68 +1156,81 @@
     }
 
     function requestTimerReset() {
+      if (focusMode === 'stopwatch') {
+        if (!isRunning) { swSecs = 0; updateClockDisplay(); return; }
+        if (swSecs < 60) return discardStopwatch();
+        return askConfirm('Discard this session?', `Your ${fmtDur(Math.floor(swSecs / 60))} of study time will not be saved. Press Finish instead if you want to keep it.`, discardStopwatch, 'Discard', '🗑️', true);
+      }
       if (isOvertime) return finishOvertime();
       if (isRunning) document.getElementById('warningModal')?.classList.add('active');
       else confirmStopTimer(false);
     }
 
     function closeWarningModal() {
+      pendingMins = null; // "Keep Going" cancels any pending preset change
       document.getElementById('warningModal')?.classList.remove('active');
     }
 
     function confirmStopTimer(didWither = true) {
+      const next = pendingMins; pendingMins = null;
       stopTicker(); releaseWake();
       isRunning = false; isPaused = false; endTime = null;
       isOvertime = false; overtimeSecs = 0; lastOT = 0;
       saveSession();
       if (didWither) witherPlant();
       remaining = selectedMinutes * 60;
-      countUpElapsed = 0; countUpLastTick = 0;
       setBtn(); updateClockDisplay(); closeWarningModal(); renderPlant();
+      if (next) setTimerDuration(next);
     }
 
     function updateClockDisplay() {
       const display = document.getElementById('timerDisplay');
-      const secs = isOvertime ? Math.floor(overtimeSecs) : focusMode === 'countup' ? Math.floor(countUpElapsed) : remaining;
-      const hours = Math.floor(secs / 3600);
-      const m = String(Math.floor((secs % 3600) / 60)).padStart(2, '0');
-      const sec = String(secs % 60).padStart(2, '0');
-      const clock = hours > 0 ? `${String(hours).padStart(2, '0')}:${m}:${sec}` : `${m}:${sec}`;
-      const sign = isOvertime ? '+' : '';
-      if (display) { display.textContent = `${sign}${clock}`; display.classList.toggle('overtime', isOvertime); }
-      document.title = isRunning && !isPaused ? `${sign}${clock} · Elevia` : ORIG_TITLE;
+      let text;
+      if (focusMode === 'stopwatch') text = fmtClock(Math.floor(swSecs));
+      else {
+        const secs = isOvertime ? Math.floor(overtimeSecs) : remaining;
+        text = `${isOvertime ? '+' : ''}${pad2(Math.floor(secs / 60))}:${pad2(secs % 60)}`;
+      }
+      if (display) { display.textContent = text; display.classList.toggle('overtime', isOvertime); }
+      document.title = isRunning && !isPaused ? `${text} · Elevia` : ORIG_TITLE;
     }
 
     function restoreSession() {
       let saved = null;
       try { saved = JSON.parse(localStorage.getItem('focusSession')); } catch (e) {}
       if (!saved) return;
-      selectedMinutes = saved.selectedMinutes || selectedMinutes; remaining = saved.remaining ?? remaining;
-      focusMode = saved.focusMode === 'countup' ? 'countup' : 'countdown';
-      countUpElapsed = Number(saved.countUpElapsed) || 0;
-      countUpLastTick = Number(saved.countUpLastTick) || 0;
-      document.getElementById('countdownModeBtn')?.classList.toggle('active', focusMode === 'countdown');
-      document.getElementById('countupModeBtn')?.classList.toggle('active', focusMode === 'countup');
-      const presets = document.getElementById('timerPresets');
-      if (presets) presets.style.display = focusMode === 'countdown' ? 'flex' : 'none';
-      isRunning = true; isPaused = !!saved.isPaused; endTime = saved.endTime;
-      document.querySelectorAll('.preset-pill').forEach(b => b.classList.toggle('active', b.textContent === `${selectedMinutes}m`));
-      if (focusMode === 'countup') {
-        isOvertime = false; endTime = null;
-        if (!isPaused) countUpLastTick = Date.now();
-        setBtn(); updateClockDisplay(); updateFocusPlantGrowth();
-        if (!isPaused) { startTicker(); requestWake(); }
+
+      if (saved.mode === 'stopwatch') {
+        focusMode = 'stopwatch';
+        localStorage.setItem('focusMode', 'stopwatch');
+        isRunning = true; isOvertime = false; isPaused = !!saved.isPaused; endTime = null;
+        swSecs = Number(saved.swSecs) || 0;
+        swLast = Number(saved.swLast) || Date.now(); // time while the page was closed is ignored (gap > 90s)
+        applyMode();
+        if (!isPaused) { startTicker(); tick(); requestWake(); }
         return;
       }
+
+      focusMode = 'timer';
+      localStorage.setItem('focusMode', 'timer');
+      selectedMinutes = saved.selectedMinutes; remaining = saved.remaining;
+      isRunning = true; isPaused = !!saved.isPaused; endTime = saved.endTime;
+      // If the page was closed (or the PC slept) for more than 90s, that gap is not study time:
+      // push the end time back so the countdown continues from where you left off.
+      if (!isPaused && saved.endTime && saved.lastSeen) {
+        const gap = Date.now() - saved.lastSeen;
+        if (gap > 90000) endTime = saved.endTime + gap;
+      }
+      document.querySelectorAll('.preset-pill').forEach(b => b.classList.toggle('active', b.textContent === `${selectedMinutes}m`));
       if (saved.isOvertime) {
         isOvertime = true; isPaused = false; endTime = null; remaining = 0;
         overtimeSecs = Number(saved.overtimeSecs) || 0;
         lastOT = Number(saved.lastOT) || Date.now(); // time while the page was closed is ignored (gap > 90s)
-        setBtn(); updateClockDisplay(); updateFocusPlantGrowth();
+        applyMode();
         startTicker(); tick(); requestWake();
         return;
       }
-      setBtn(); updateClockDisplay(); updateFocusPlantGrowth();
+      applyMode();
       if (!isPaused) { startTicker(); tick(); requestWake(); }
     }
 
@@ -1181,7 +1271,7 @@
 
     // --- 7. STATS ANALYTICS ---
     // Focus time is stored per calendar day, so Today / This Week (Mon-Sun) / This Month are real, separate numbers.
-    const dayKey = d => d.toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
+    const dayKey = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; // YYYY-MM-DD, local time
 
     function loadFocusLog() {
       let log = null;
@@ -1199,6 +1289,34 @@
       return log;
     }
 
+    // Cloud sync helper (3-way merge), kept here so it is easy to test.
+    //   cloud  = minutes per day the account already has
+    //   local  = minutes per day on this device
+    //   synced = how much of `local` the cloud has already received from this device
+    // Whatever this device studied since the last sync is ADDED to the cloud, so two devices
+    // never overwrite each other and nothing is counted twice.
+    function mergeFocusLogs(cloud, local, synced) {
+      const DAY = /^\d{4}-\d{2}-\d{2}$/;
+      const merged = {}, deltas = {};
+      const keys = new Set([...Object.keys(cloud || {}), ...Object.keys(local || {})]);
+      for (const k of keys) {
+        if (!DAY.test(k)) continue;
+        const c = Math.max(0, Number(cloud && cloud[k]) || 0);
+        const l = Math.max(0, Number(local && local[k]) || 0);
+        const sy = Math.max(0, Number(synced && synced[k]) || 0);
+        const d = Math.max(0, l - sy);
+        if (d > 0) deltas[k] = d;
+        if (c + d > 0) merged[k] = c + d;
+      }
+      return { merged, deltas };
+    }
+
+    // Called by the cloud code after it has merged a backup into localStorage.
+    function reloadStatsFromStorage() {
+      lastChartSig = '';
+      updateStatsDisplay();
+    }
+
     function recordCompletedFocusTime(minutes) {
       const log = loadFocusLog();
       const k = dayKey(new Date());
@@ -1209,7 +1327,8 @@
 
       updateStatsDisplay();
 
-      if (typeof window.saveProgressToCloud === 'function') window.saveProgressToCloud();
+      if (typeof window.pushFocusMinutes === 'function') window.pushFocusMinutes(k, minutes); // daily history
+      if (typeof window.saveProgressToCloud === 'function') window.saveProgressToCloud();     // points + total
     }
 
     function updateStatsDisplay() {
@@ -1231,10 +1350,9 @@
       const todayEl = document.getElementById('todayFocusTime');
       const weeklyEl = document.getElementById('weeklyFocusTime');
       const monthlyEl = document.getElementById('monthlyFocusTime');
-      if (todayEl) todayEl.textContent = formatFocusTime(today);
-      if (weeklyEl) weeklyEl.textContent = formatFocusTime(weekly);
-      if (monthlyEl) monthlyEl.textContent = formatFocusTime(monthly);
-      renderMonthlyFocusChart(log, now);
+      if (todayEl) todayEl.textContent = fmtDur(today);
+      if (weeklyEl) weeklyEl.textContent = fmtDur(weekly);
+      if (monthlyEl) monthlyEl.textContent = fmtDur(monthly);
 
       const bar = (id, val, goal) => {
         const el = document.getElementById(id);
@@ -1243,52 +1361,118 @@
       bar('todayProgress', today, 60);      // goal: 1 hr / day
       bar('weeklyProgress', weekly, 300);   // goal: 5 hrs / week
       bar('monthlyProgress', monthly, 1200); // goal: 20 hrs / month
-    }
-    function formatFocusTime(totalMinutes) {
-      const minutes = Math.max(0, Math.round(Number(totalMinutes) || 0));
-      const hours = Math.floor(minutes / 60);
-      const remainder = minutes % 60;
-      if (hours && remainder) return `${hours}h ${remainder}m`;
-      if (hours) return `${hours}h`;
-      return `${remainder}m`;
+
+      renderMonthChart(false);
     }
 
-    function renderMonthlyFocusChart(log, now = new Date()) {
-      const chart = document.getElementById('monthlyFocusChart');
-      if (!chart) return;
-      const months = [];
-      for (let offset = 11; offset >= 0; offset--) {
-        const date = new Date(now.getFullYear(), now.getMonth() - offset, 1);
-        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        const total = Object.entries(log).reduce((sum, [day, mins]) => sum + (day.startsWith(key) ? Number(mins) || 0 : 0), 0);
-        months.push({ key, label: date.toLocaleDateString(undefined, { month: 'short' }), total });
+    // --- MONTH-BY-MONTH CHART (reads the same per-day focusLog, grouped by month) ---
+    const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const MONTHS_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    let chartYear = new Date().getFullYear();
+    let chartSel = new Date().getMonth();
+    let lastChartSig = '';
+
+    function monthData(year) {
+      const mins = Array(12).fill(0), days = Array(12).fill(0);
+      for (const [k, v] of Object.entries(loadFocusLog())) {
+        if (k.slice(0, 4) !== String(year)) continue;
+        const m = Number(k.slice(5, 7)) - 1;
+        if (m >= 0 && m < 12 && v > 0) { mins[m] += v; days[m]++; }
       }
-      const max = Math.max(60, ...months.map(m => m.total));
-      const grandTotal = months.reduce((sum, m) => sum + m.total, 0);
-      const totalEl = document.getElementById('chartTotalTime');
-      if (totalEl) totalEl.textContent = `${formatFocusTime(grandTotal)} total`;
-      chart.innerHTML = months.map(m => {
-        const height = m.total ? Math.max(3, (m.total / max) * 100) : 2;
-        return `<div class="month-bar-column" title="${m.label}: ${formatFocusTime(m.total)}">
-          <div class="month-bar-value">${m.total ? formatFocusTime(m.total) : ''}</div>
-          <div class="month-bar-track"><div class="month-bar-fill" style="height:${height}%"></div></div>
-          <span class="month-bar-label">${m.label}</span>
-        </div>`;
+      return { mins, days };
+    }
+
+    function earliestLogYear() {
+      let y = new Date().getFullYear();
+      for (const k of Object.keys(loadFocusLog())) {
+        const ky = Number(k.slice(0, 4));
+        if (ky > 1999 && ky < y) y = ky;
+      }
+      return y;
+    }
+
+    // Picks a tidy axis step (in minutes) so the grid labels read like 30m, 1h, 2h...
+    function niceStep(max) {
+      if (!max) return 15;
+      const steps = [5, 10, 15, 30, 60, 120, 180, 240, 300, 600, 1200, 1800, 3000, 6000, 12000];
+      return steps.find(s => s >= max / 4) || 12000;
+    }
+
+    function renderMonthChart(animate = false) {
+      const host = document.getElementById('monthChart');
+      if (!host) return;
+      const { mins, days } = monthData(chartYear);
+      const sig = `${chartYear}|${chartSel}|${mins.join(',')}`;
+      if (!animate && sig === lastChartSig) return; // nothing changed: leave the DOM (and animation) alone
+      lastChartSig = sig;
+
+      const now = new Date(), curY = now.getFullYear(), curM = now.getMonth();
+      const step = niceStep(Math.max(...mins));
+      const axisMax = step * 4;
+
+      const grid = [0, 1, 2, 3, 4].map(i =>
+        `<div class="mc-grid" style="bottom:${i * 25}%"><span>${i ? fmtDur(step * i) : '0'}</span></div>`).join('');
+
+      const cols = mins.map((v, i) => {
+        const future = chartYear > curY || (chartYear === curY && i > curM);
+        const h = v > 0 ? Math.max(2.5, (v / axisMax) * 100) : 0;
+        const label = `${MONTHS_LONG[i]}: ${future ? 'not started yet' : v ? fmtDur(v) : 'no focus time'}`;
+        const cls = ['mc-col', i === chartSel ? 'sel' : '', i === curM && chartYear === curY ? 'now' : '', future ? 'future' : ''].join(' ');
+        return `<button class="${cls}" ${future ? 'disabled' : ''} data-m="${i}" style="--i:${i}" onclick="selectMonth(${i})" title="${label}" aria-label="${label}">
+          <span class="mc-fill" style="height:${h}%"></span></button>`;
       }).join('');
-      chart.setAttribute('aria-label', 'Monthly study time for the last 12 months: ' + months.map(m => `${m.label} ${formatFocusTime(m.total)}`).join(', '));
+
+      const names = MONTHS_SHORT.map((n, i) => `<span class="${i === chartSel ? 'sel' : ''}">${n}</span>`).join('');
+
+      host.classList.toggle('animate', animate);
+      host.innerHTML = `<div class="mc-plot">${grid}<div class="mc-bars">${cols}</div></div><div class="mc-months">${names}</div>`;
+
+      const total = mins.reduce((a, b) => a + b, 0);
+      const set = (id, t) => { const el = document.getElementById(id); if (el) el.textContent = t; };
+      set('chartYearLabel', chartYear);
+      set('chartYearTotal', total ? `${fmtDur(total)} studied in ${chartYear}` : `No focus time logged in ${chartYear}`);
+      const v = mins[chartSel], d = days[chartSel];
+      set('monthReadout', v
+        ? `${MONTHS_LONG[chartSel]} ${chartYear}: ${fmtDur(v)} across ${d} day${d > 1 ? 's' : ''}, about ${fmtDur(v / d)} per active day.`
+        : `${MONTHS_LONG[chartSel]} ${chartYear}: no focus time logged.`);
+
+      const prev = document.getElementById('yearPrev'), next = document.getElementById('yearNext');
+      if (prev) prev.disabled = chartYear <= earliestLogYear();
+      if (next) next.disabled = chartYear >= curY;
+    }
+
+    function selectMonth(i) {
+      chartSel = i;
+      lastChartSig = '';
+      renderMonthChart(false);
+      document.querySelector(`#monthChart .mc-col[data-m="${i}"]`)?.focus();
+    }
+
+    function shiftChartYear(d) {
+      const curY = new Date().getFullYear();
+      const y = Math.min(curY, Math.max(earliestLogYear(), chartYear + d));
+      if (y === chartYear) return;
+      chartYear = y;
+      const { mins } = monthData(y);
+      chartSel = y === curY ? new Date().getMonth() : mins.indexOf(Math.max(...mins));
+      renderMonthChart(true);
     }
 
     setInterval(updateStatsDisplay, 60000); // rolls over at midnight / new week / new month
 
     function resetStats() {
-      askConfirm('Reset your stats?', 'This clears your focus analytics and your forest garden. It cannot be undone.', () => {
+      askConfirm('Reset your stats?', 'This clears your focus analytics and your forest garden. If you are signed in, your cloud backup is cleared too. It cannot be undone.', () => {
+        Object.keys(localStorage).filter(k => k.startsWith('focusLogSynced_')).forEach(k => localStorage.removeItem(k));
+        if (typeof window.resetCloudFocusLog === 'function') window.resetCloudFocusLog();
         localStorage.removeItem('todayFocus');
         localStorage.removeItem('weeklyFocus');
         localStorage.setItem('focusLog', '{}');
         localStorage.removeItem('forestGarden');
         forest = [];
+        lastChartSig = '';
         updateStatsDisplay();
         renderForestGarden();
+        if (typeof window.saveProgressToCloud === 'function') window.saveProgressToCloud();
       }, 'Reset', '🗑️', true);
     }
 
@@ -1344,41 +1528,72 @@
     }
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMessage(); });
 
+    // In fullscreen only the fullscreen card is drawn, so dialogs/toasts must live inside it.
+    document.addEventListener('fullscreenchange', () => {
+      const host = document.fullscreenElement || document.body;
+      ['toastHost', 'msgOverlay', 'warningModal'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.parentElement !== host) host.appendChild(el);
+      });
+    });
+
     // --- 8. UTILS ---
-    const fmtHrs = m => formatFocusTime(m);
+    // 114 -> "1h 54m", 60 -> "1h", 45 -> "45m"
+    const fmtDur = m => {
+      m = Math.max(0, Math.round(m));
+      const h = Math.floor(m / 60), r = m % 60;
+      if (!h) return `${r}m`;
+      return r ? `${h}h ${r}m` : `${h}h`;
+    };
+    const pad2 = n => String(n).padStart(2, '0');
+    // seconds -> "05:09" or "1:05:09"
+    const fmtClock = s => {
+      const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
+      return h ? `${h}:${pad2(m)}:${pad2(x)}` : `${pad2(m)}:${pad2(x)}`;
+    };
     const esc = t => String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
     const THEMES = [
+      // light
       { id: 'meadow', name: 'Meadow', c: ['#EFEAD9', '#FBF8EE', '#4B7F52'] },
-      { id: 'night', name: 'Forest Night', c: ['#141C15', '#1D2A1E', '#7FB579'] },
-      { id: 'sakura', name: 'Sakura', c: ['#FBEFF1', '#FFF8F9', '#D0668A'] },
+      { id: 'sakura', name: 'Sakura', c: ['#FBEFF1', '#FFF8F9', '#C9577F'] },
       { id: 'ocean', name: 'Ocean', c: ['#E6F1F4', '#F5FAFB', '#2C7A93'] },
-      { id: 'sunset', name: 'Sunset', c: ['#FBEBDD', '#FFF6EC', '#D9693A'] },
+      { id: 'sunset', name: 'Sunset', c: ['#FBEBDD', '#FFF6EC', '#C95A2C'] },
       { id: 'lavender', name: 'Lavender', c: ['#ECE8F5', '#F8F6FC', '#7A62B8'] },
-      { id: 'midnight', name: 'Midnight', c: ['#0E1424', '#161E33', '#7C9CFF'] },
-      { id: 'mocha', name: 'Mocha', c: ['#1C1612', '#261E18', '#D9A066'] },
-      { id: 'amethyst', name: 'Dark Purple', c: ['#150E24', '#20163A', '#B48CFF'] },
-      { id: 'deepsea', name: 'Dark Blue', c: ['#06121F', '#0C2036', '#4DB2FF'] },
-      { id: 'sage', name: 'Soft Sage', c: ['#E8EEE5', '#F8FBF6', '#6F9275'] },
-      { id: 'rosewater', name: 'Rosewater', c: ['#F8E9E8', '#FFF8F6', '#C97883'] },
       { id: 'buttercream', name: 'Buttercream', c: ['#F5EEDB', '#FFFCF2', '#B68B45'] },
-      { id: 'powderblue', name: 'Powder Blue', c: ['#E7EFF7', '#F8FBFF', '#6388B5'] },
-      { id: 'matcha', name: 'Matcha Latte', c: ['#E7E8D8', '#F8F8EE', '#7B8650'] },
-      { id: 'berry', name: 'Blackberry', c: ['#211827', '#302238', '#D49ACB'] }
+      { id: 'paper', name: 'Paper', c: ['#EDECE8', '#FAFAF7', '#2F2F2D'] },
+      { id: 'coralcloud', name: 'Coral Cloud', c: ['#ECEFF4', '#F9FAFC', '#C74E3C'] },
+      // dark
+      { id: 'night', name: 'Forest Night', dark: true, c: ['#141C15', '#1D2A1E', '#7FB579'] },
+      { id: 'deepsea', name: 'Deep Sea', dark: true, c: ['#06121F', '#0C2036', '#4DB2FF'] },
+      { id: 'aurora', name: 'Aurora', dark: true, c: ['#08141A', '#0F222B', '#5EEAD4'] },
+      { id: 'cosmos', name: 'Cosmos', dark: true, c: ['#0B0A1E', '#14132E', '#8F8BFF'] },
+      { id: 'neon', name: 'Neon Tokyo', dark: true, c: ['#0D0820', '#170F33', '#FF5CD1'] },
+      { id: 'ember', name: 'Ember', dark: true, c: ['#170D0A', '#241410', '#FF7A45'] },
+      { id: 'mocha', name: 'Mocha', dark: true, c: ['#1C1612', '#261E18', '#D9A066'] },
+      { id: 'dusk', name: 'Dusk', dark: true, c: ['#1A1030', '#261A40', '#FFB070'] },
+      { id: 'graphite', name: 'Graphite', dark: true, c: ['#0B0B0C', '#151517', '#E6E6E9'] }
     ];
 
     function applyTheme(id) {
+      if (!THEMES.some(t => t.id === id)) id = 'meadow';
       document.body.dataset.theme = id;
       try { localStorage.setItem('theme', id); } catch (e) {}
+      // colour the phone's browser bar to match
+      const bg = getComputedStyle(document.body).getPropertyValue('--bg').trim();
+      if (bg) document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bg);
     }
 
     function openThemes() {
       const cur = document.body.dataset.theme || 'meadow';
-      document.getElementById('themeGrid').innerHTML = THEMES.map(t => `
+      const swatch = t => `
         <button class="shop-item theme-swatch ${t.id === cur ? 'sel' : ''}" onclick="applyTheme('${t.id}'); openThemes()">
           <div style="display: flex; width: 100%; height: 34px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border);">${t.c.map(c => `<span style="flex: 1; background: ${c};"></span>`).join('')}</div>
           <strong class="cute-title">${t.name}</strong>
-        </button>`).join('');
+        </button>`;
+      document.getElementById('themeGrid').innerHTML =
+        `<p class="theme-group">Light</p>${THEMES.filter(t => !t.dark).map(swatch).join('')}` +
+        `<p class="theme-group">Dark</p>${THEMES.filter(t => t.dark).map(swatch).join('')}`;
       document.getElementById('themeModal')?.classList.add('active');
     }
 
@@ -1419,7 +1634,8 @@
     query, 
     orderBy, 
     limit, 
-    onSnapshot 
+    onSnapshot,
+    increment
   } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -1438,6 +1654,74 @@
   const provider = new GoogleAuthProvider();
 
   let currentUser = null;
+
+  // Anything that comes from a user (names, photo links) must be escaped before it goes into innerHTML,
+  // otherwise a crafted display name could run code for everyone who views the leaderboard.
+  const escHtml = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const isHttps = u => { try { return new URL(u).protocol === 'https:'; } catch (e) { return false; } };
+
+  // --- DAILY STUDY HISTORY BACKUP (powers the month-by-month chart on every device) ---
+  // Stored privately in  focusLogs/{your uid}  as  { days: { "2026-09-14": 95, ... } }  (minutes per day).
+  const syncedKey = uid => `focusLogSynced_${uid}`;
+  const readObj = k => { try { const v = JSON.parse(localStorage.getItem(k)); return v && typeof v === 'object' && !Array.isArray(v) ? v : {}; } catch (e) { return {}; } };
+  const NOTE_OFF = 'Saved on this device only. Sign in to back up your stats and see them on any device.';
+  const NOTE_SYNCING = '☁️ Syncing your history…';
+  const NOTE_ON = '☁️ Backed up to your account. Your history follows you to any device.';
+  const NOTE_ERR = '⚠️ Could not reach the cloud. Your stats are safe on this device and will upload next time.';
+  const setSyncNote = t => { const el = document.getElementById('syncNote'); if (el) el.textContent = t; };
+
+  async function syncFocusLog(user) {
+    setSyncNote(NOTE_SYNCING);
+    const ref = doc(db, 'focusLogs', user.uid);
+    try {
+      const snap = await getDoc(ref);
+      const cloud = snap.exists() ? (snap.data().days || {}) : {};
+      const { merged, deltas } = window.mergeFocusLogs(cloud, readObj('focusLog'), readObj(syncedKey(user.uid)));
+
+      const days = Object.keys(deltas);
+      if (days.length) {
+        const inc = {};
+        days.forEach(d => { inc[d] = increment(deltas[d]); });
+        await setDoc(ref, { days: inc }, { merge: true });
+      }
+      localStorage.setItem('focusLog', JSON.stringify(merged));
+      localStorage.setItem(syncedKey(user.uid), JSON.stringify(merged));
+
+      // the all-time total can never be lower than the sum of the daily history
+      const total = Object.values(merged).reduce((a, b) => a + b, 0);
+      if (total > (Number(localStorage.getItem('weeklyFocus')) || 0)) localStorage.setItem('weeklyFocus', String(total));
+
+      if (typeof window.reloadStatsFromStorage === 'function') window.reloadStatsFromStorage();
+      setSyncNote(NOTE_ON);
+    } catch (e) {
+      console.error('Could not sync your study history:', e.code || e);
+      setSyncNote(NOTE_ERR);
+    }
+  }
+
+  // Called after every finished session: add those minutes to today's cloud total.
+  window.pushFocusMinutes = async (day, minutes) => {
+    if (!currentUser || !minutes || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return;
+    const uid = currentUser.uid;
+    try {
+      await setDoc(doc(db, 'focusLogs', uid), { days: { [day]: increment(minutes) } }, { merge: true });
+      const synced = readObj(syncedKey(uid));
+      synced[day] = (Number(synced[day]) || 0) + minutes;
+      localStorage.setItem(syncedKey(uid), JSON.stringify(synced));
+      setSyncNote(NOTE_ON);
+    } catch (e) {
+      console.error('Could not back up this session:', e.code || e);
+      setSyncNote(NOTE_ERR); // it will be uploaded at the next sign-in
+    }
+  };
+
+  window.resetCloudFocusLog = async () => {
+    if (!currentUser) return;
+    try {
+      await setDoc(doc(db, 'focusLogs', currentUser.uid), { days: {} });
+      localStorage.removeItem(syncedKey(currentUser.uid));
+    } catch (e) { console.error('Could not clear the cloud history:', e.code || e); }
+  };
 
   // --- AUTHENTICATION LISTENERS ---
   window.toggleAuthModal = () => {
@@ -1459,8 +1743,12 @@
     if (!currentUser) return;
     const nameInput = document.getElementById('accountNameInput');
     const photoInput = document.getElementById('accountPhotoInput');
-    const newName = (nameInput?.value || '').trim() || 'Anonymous Sprout';
+    const newName = (nameInput?.value || '').trim().slice(0, 30) || 'Anonymous Sprout';
     const newPhoto = (photoInput?.value || '').trim();
+    if (newPhoto && !isHttps(newPhoto)) {
+      notify('That picture link will not work', 'Use a full link that starts with https://', 'warn');
+      return;
+    }
 
     try {
       await updateProfile(currentUser, {
@@ -1503,10 +1791,11 @@
 
     if (user) {
       if (subtitle) subtitle.textContent = "You're on the board — keep focusing to climb the ranks!";
-      await syncUserDataWithCloud(user);
+      try { await syncUserDataWithCloud(user); } catch (e) { console.error('Cloud sync failed:', e); }
       listenToLeaderboard();
     } else {
       if (subtitle) subtitle.textContent = 'Sign in to view and join the global leaderboard!';
+      setSyncNote(NOTE_OFF);
       // Reset every leaderboard container back to its signed-out placeholder
       document.querySelectorAll('.leaderboard-target').forEach(el => {
         el.innerHTML = '<p class="leaderboard-empty-msg" style="color: var(--subtext); text-align: center; font-style: italic;">Sign in to view and join the global leaderboard!</p>';
@@ -1526,10 +1815,10 @@
     if (!authBtn) return;
     if (user) {
       const firstName = (user.displayName || 'Sprout').split(' ')[0];
-      const avatar = user.photoURL
-        ? `<img src="${user.photoURL}" alt="" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:-4px;">`
+      const avatar = user.photoURL && isHttps(user.photoURL)
+        ? `<img src="${escHtml(user.photoURL)}" alt="" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:-4px;">`
         : '👤';
-      authBtn.innerHTML = `${avatar} ${firstName}`;
+      authBtn.innerHTML = `${avatar} ${escHtml(firstName)}`;
     } else {
       authBtn.textContent = '🔑 Sign In';
     }
@@ -1551,7 +1840,15 @@
       if (typeof window.setUserPointsFromCloud === 'function') {
         window.setUserPointsFromCloud(data.points || 0);
       }
+      // Keep the larger study total. Before, signing in on a new device pushed that device's 0
+      // up to the cloud and wiped your leaderboard minutes.
+      const cloudMins = Number(data.totalFocusMinutes) || 0;
+      const localMins = Number(localStorage.getItem('weeklyFocus')) || 0;
+      if (cloudMins > localMins) localStorage.setItem('weeklyFocus', String(cloudMins));
     }
+
+    // Merge the daily study history first, so the all-time total below is up to date
+    await syncFocusLog(user);
 
     // Save current local progress to Firebase
     saveProgressToCloud();
@@ -1563,13 +1860,17 @@
     const userRef = doc(db, "users", currentUser.uid);
     const totalFocus = Number(localStorage.getItem('weeklyFocus')) || 0;
 
-    await setDoc(userRef, {
-      displayName: currentUser.displayName || "Anonymous Sprout",
-      photoURL: currentUser.photoURL || "",
-      points: Number(localStorage.getItem('userPoints')) || 0,
-      totalFocusMinutes: totalFocus,
-      lastActive: new Date()
-    }, { merge: true });
+    try {
+      await setDoc(userRef, {
+        displayName: currentUser.displayName || "Anonymous Sprout",
+        photoURL: currentUser.photoURL || "",
+        points: Number(localStorage.getItem('userPoints')) || 0,
+        totalFocusMinutes: totalFocus,
+        lastActive: new Date()
+      }, { merge: true });
+    } catch (e) {
+      console.error('Could not save progress to the cloud:', e.code || e);
+    }
   };
 
   // --- LIVE LEADERBOARD LISTENERS ---
@@ -1606,11 +1907,11 @@
           <div class="leaderboard-row">
             <div class="leaderboard-row-who">
               <span class="leaderboard-rank">${rankMedal}</span>
-              <span class="leaderboard-name">${u.displayName}</span>
+              <span class="leaderboard-name">${escHtml(u.displayName || 'Anonymous Sprout')}</span>
             </div>
             <div class="leaderboard-row-stats">
-              <span>⏱️ <strong>${fmtHrs(u.totalFocusMinutes || 0)}</strong></span>
-              <span>🪙 <strong>${u.points || 0}</strong> pts</span>
+              <span>⏱️ <strong>${fmtDur(Number(u.totalFocusMinutes) || 0)}</strong></span>
+              <span>🪙 <strong>${Number(u.points) || 0}</strong> pts</span>
             </div>
           </div>
         `);
@@ -1626,7 +1927,7 @@
       // the page, only in the browser console.
       console.error("Leaderboard read failed:", error.code, error.message);
       leaderboardEls.forEach(el => {
-        el.innerHTML = `<p style="color: var(--danger); text-align: center; font-size: 0.85rem;">Couldn't load the leaderboard (${error.code || 'error'}). Check your Firestore security rules or console for details.</p>`;
+        el.innerHTML = `<p style="color: var(--danger); text-align: center; font-size: 0.85rem;">Couldn't load the leaderboard (${escHtml(error.code || 'error')}). Check your Firestore security rules or console for details.</p>`;
       });
     });
   }
@@ -1675,7 +1976,7 @@
   </div>
 
   <script>
-    lucide.createIcons();
+    if (window.lucide) lucide.createIcons();
   </script>
 </body>
 </html>

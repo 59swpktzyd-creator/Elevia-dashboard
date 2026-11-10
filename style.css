@@ -773,3 +773,19 @@ body .pill-btn.primary, body .preset-pill.active, body .mode-btn.active, body .p
   .glyph, .stat-fill { transition: none; }
   .glyph.glyph-in, .month-chart.animate .mc-fill { animation: none; }
 }
+
+
+/* --- v9: week/month chart tabs and the "move study time" dialog --- */
+.chart-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.chart-tabs { display: inline-flex; gap: 3px; padding: 3px; background: var(--bg); border: 1px solid var(--border); border-radius: 9999px; }
+.chart-tab { border: none; background: transparent; color: var(--subtext); padding: 5px 14px; border-radius: 9999px; font: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s ease, color 0.2s ease; }
+.chart-tab:hover { color: var(--text); }
+.chart-tab.active { background: var(--accent); color: var(--on-accent, #fff); }
+.chart-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.year-label { min-width: 7.5em; }
+.month-chart.week .mc-fill { max-width: 52px; }
+.move-label { display: block; margin: 14px 0 6px; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; color: var(--subtext); }
+.move-input { width: 100%; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font: inherit; font-size: 0.95rem; }
+.move-input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.move-info { display: block; margin-top: 5px; color: var(--subtext); font-size: 0.8rem; }
+@media (max-width: 600px) { .year-label { min-width: 6.5em; font-size: 0.95rem; } .chart-head { gap: 10px; } }

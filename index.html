@@ -8,7 +8,7 @@
   <meta name="description" content="Elevia: a calm focus dashboard with a growing plant companion, goals and study stats.">
   <meta name="theme-color" content="#EFEAD9">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%B1%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="style.css?v=8">
+  <link rel="stylesheet" href="style.css?v=10">
 
   <!-- External Libraries -->
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -304,18 +304,25 @@ try {
       <div class="card">
         <div class="chart-head">
           <div>
-            <h3 class="cute-title" style="font-size: 1.3rem;">Month by month</h3>
+            <h3 id="chartTitle" class="cute-title" style="font-size: 1.3rem;">Month by month</h3>
             <p id="chartYearTotal" class="chart-sub"></p>
           </div>
-          <div class="year-nav">
-            <button id="yearPrev" class="year-btn" onclick="shiftChartYear(-1)" aria-label="Previous year">‹</button>
-            <span id="chartYearLabel" class="year-label">2026</span>
-            <button id="yearNext" class="year-btn" onclick="shiftChartYear(1)" aria-label="Next year">›</button>
+          <div class="chart-controls">
+            <div class="chart-tabs" role="group" aria-label="Chart range">
+              <button id="chartTabWeek" class="chart-tab" onclick="setChartMode('week')">Week</button>
+              <button id="chartTabMonth" class="chart-tab active" onclick="setChartMode('month')">Month</button>
+            </div>
+            <div class="year-nav">
+              <button id="yearPrev" class="year-btn" onclick="shiftChart(-1)" aria-label="Previous">‹</button>
+              <span id="chartYearLabel" class="year-label">2026</span>
+              <button id="yearNext" class="year-btn" onclick="shiftChart(1)" aria-label="Next">›</button>
+            </div>
           </div>
         </div>
         <div id="monthChart" class="month-chart" role="group" aria-label="Focus time for each month"></div>
         <p id="monthReadout" class="month-readout"></p>
         <p id="syncNote" class="sync-note">Saved on this device only. Sign in to back up your stats and see them on any device.</p>
+        <div style="text-align: center; margin-top: 6px;"><button class="delete-ghost" style="font-size: 0.82rem;" onclick="openMoveModal()">✏️ Move study time between days</button></div>
       </div>
 
       <div style="text-align: center;">
@@ -333,6 +340,32 @@ try {
         <button onclick="closeShop()" class="delete-ghost">✕</button>
       </div>
       <div id="shopGrid" class="shop-grid"></div>
+    </div>
+  </div>
+
+  <div id="moveModal" class="shop-modal" onclick="if(event.target===this)closeMoveModal()">
+    <div class="shop-content" style="max-width: 420px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="cute-title" style="font-size: 1.4rem;">✏️ Move study time</h3>
+        <button onclick="closeMoveModal()" class="delete-ghost">✕</button>
+      </div>
+      <p style="color: var(--subtext); font-size: 0.88rem; margin: 8px 0 14px; line-height: 1.5;">Study time from before the update has no dates, so it all landed on one day. Move it to the days you really studied. Your total never changes.</p>
+
+      <label class="move-label" for="moveFrom">Take time from</label>
+      <input type="date" id="moveFrom" class="move-input" oninput="updateMoveInfo()">
+      <small id="moveFromInfo" class="move-info"></small>
+
+      <label class="move-label" for="moveTo">Move it to</label>
+      <input type="date" id="moveTo" class="move-input">
+
+      <label class="move-label">How much</label>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <input type="number" id="moveHours" class="move-input" min="0" placeholder="Hours" style="flex: 1;">
+        <input type="number" id="moveMinutes" class="move-input" min="0" max="59" placeholder="Minutes" style="flex: 1;">
+        <button class="pill-btn ghost" onclick="moveAll()" title="Move everything on that day">All</button>
+      </div>
+
+      <button class="pill-btn primary" onclick="applyMove()" style="width: 100%; margin-top: 18px; padding: 12px;">Move time</button>
     </div>
   </div>
 
@@ -1365,11 +1398,21 @@ try {
       renderMonthChart(false);
     }
 
-    // --- MONTH-BY-MONTH CHART (reads the same per-day focusLog, grouped by month) ---
+    // --- FOCUS CHARTS: month-by-month and day-by-day (one week). Both read the same daily log. ---
     const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const MONTHS_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const DAYS_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const DAYS_LONG = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const mondayOf = d => { const m = new Date(d); m.setHours(0, 0, 0, 0); m.setDate(m.getDate() - ((m.getDay() + 6) % 7)); return m; };
+    const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+    const fmtShortDate = d => `${MONTHS_SHORT[d.getMonth()]} ${d.getDate()}`;
+    const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+    let chartMode = localStorage.getItem('chartMode') === 'week' ? 'week' : 'month';
     let chartYear = new Date().getFullYear();
-    let chartSel = new Date().getMonth();
+    let chartSel = new Date().getMonth();                 // selected month (month view)
+    let chartWeek = mondayOf(new Date());                 // Monday of the shown week (week view)
+    let chartDaySel = (new Date().getDay() + 6) % 7;      // selected weekday 0=Mon (week view)
     let lastChartSig = '';
 
     function monthData(year) {
@@ -1382,14 +1425,20 @@ try {
       return { mins, days };
     }
 
-    function earliestLogYear() {
-      let y = new Date().getFullYear();
-      for (const k of Object.keys(loadFocusLog())) {
-        const ky = Number(k.slice(0, 4));
-        if (ky > 1999 && ky < y) y = ky;
-      }
-      return y;
+    function weekData(monday) {
+      const log = loadFocusLog(), todayK = dayKey(new Date());
+      return Array.from({ length: 7 }, (_, i) => {
+        const date = addDays(monday, i), key = dayKey(date);
+        return { date, key, mins: Number(log[key]) || 0, future: key > todayK, today: key === todayK };
+      });
     }
+
+    function earliestLogDay() {
+      let best = null;
+      for (const k of Object.keys(loadFocusLog())) if (DAY_RE.test(k) && (best === null || k < best)) best = k;
+      return best ? new Date(Number(best.slice(0, 4)), Number(best.slice(5, 7)) - 1, Number(best.slice(8, 10))) : new Date();
+    }
+    const earliestLogYear = () => earliestLogDay().getFullYear();
 
     // Picks a tidy axis step (in minutes) so the grid labels read like 30m, 1h, 2h...
     function niceStep(max) {
@@ -1398,64 +1447,180 @@ try {
       return steps.find(s => s >= max / 4) || 12000;
     }
 
+    // (name kept so the router and the stats refresh keep working)
     function renderMonthChart(animate = false) {
       const host = document.getElementById('monthChart');
       if (!host) return;
-      const { mins, days } = monthData(chartYear);
-      const sig = `${chartYear}|${chartSel}|${mins.join(',')}`;
+      const week = chartMode === 'week';
+      const now = new Date(), curY = now.getFullYear(), curM = now.getMonth();
+
+      let cols, sel, monthDays = null;
+      if (week) {
+        cols = weekData(chartWeek).map((d, i) => ({
+          mins: d.mins, short: DAYS_SHORT[i], future: d.future, now: d.today,
+          tip: `${DAYS_LONG[i]}, ${fmtShortDate(d.date)}`
+        }));
+        sel = chartDaySel;
+      } else {
+        const md = monthData(chartYear); monthDays = md.days;
+        cols = md.mins.map((v, i) => ({
+          mins: v, short: MONTHS_SHORT[i],
+          future: chartYear > curY || (chartYear === curY && i > curM),
+          now: i === curM && chartYear === curY, tip: MONTHS_LONG[i]
+        }));
+        sel = chartSel;
+      }
+
+      const sig = [chartMode, week ? dayKey(chartWeek) : chartYear, sel, cols.map(c => c.mins).join(',')].join('|');
       if (!animate && sig === lastChartSig) return; // nothing changed: leave the DOM (and animation) alone
       lastChartSig = sig;
 
-      const now = new Date(), curY = now.getFullYear(), curM = now.getMonth();
-      const step = niceStep(Math.max(...mins));
-      const axisMax = step * 4;
-
+      const max = Math.max(...cols.map(c => c.mins));
+      const step = niceStep(max), axisMax = step * 4;
       const grid = [0, 1, 2, 3, 4].map(i =>
         `<div class="mc-grid" style="bottom:${i * 25}%"><span>${i ? fmtDur(step * i) : '0'}</span></div>`).join('');
 
-      const cols = mins.map((v, i) => {
-        const future = chartYear > curY || (chartYear === curY && i > curM);
-        const h = v > 0 ? Math.max(2.5, (v / axisMax) * 100) : 0;
-        const label = `${MONTHS_LONG[i]}: ${future ? 'not started yet' : v ? fmtDur(v) : 'no focus time'}`;
-        const cls = ['mc-col', i === chartSel ? 'sel' : '', i === curM && chartYear === curY ? 'now' : '', future ? 'future' : ''].join(' ');
-        return `<button class="${cls}" ${future ? 'disabled' : ''} data-m="${i}" style="--i:${i}" onclick="selectMonth(${i})" title="${label}" aria-label="${label}">
+      const bars = cols.map((c, i) => {
+        const h = c.mins > 0 ? Math.max(2.5, (c.mins / axisMax) * 100) : 0;
+        const label = `${c.tip}: ${c.future ? 'not yet' : c.mins ? fmtDur(c.mins) : 'no focus time'}`;
+        const cls = ['mc-col', i === sel ? 'sel' : '', c.now ? 'now' : '', c.future ? 'future' : ''].join(' ');
+        return `<button class="${cls}" ${c.future ? 'disabled' : ''} data-i="${i}" style="--i:${i}" onclick="selectChartItem(${i})" title="${label}" aria-label="${label}">
           <span class="mc-fill" style="height:${h}%"></span></button>`;
       }).join('');
-
-      const names = MONTHS_SHORT.map((n, i) => `<span class="${i === chartSel ? 'sel' : ''}">${n}</span>`).join('');
+      const names = cols.map((c, i) => `<span class="${i === sel ? 'sel' : ''}">${c.short}</span>`).join('');
 
       host.classList.toggle('animate', animate);
-      host.innerHTML = `<div class="mc-plot">${grid}<div class="mc-bars">${cols}</div></div><div class="mc-months">${names}</div>`;
+      host.classList.toggle('week', week);
+      host.innerHTML = `<div class="mc-plot">${grid}<div class="mc-bars">${bars}</div></div><div class="mc-months">${names}</div>`;
 
-      const total = mins.reduce((a, b) => a + b, 0);
       const set = (id, t) => { const el = document.getElementById(id); if (el) el.textContent = t; };
-      set('chartYearLabel', chartYear);
-      set('chartYearTotal', total ? `${fmtDur(total)} studied in ${chartYear}` : `No focus time logged in ${chartYear}`);
-      const v = mins[chartSel], d = days[chartSel];
-      set('monthReadout', v
-        ? `${MONTHS_LONG[chartSel]} ${chartYear}: ${fmtDur(v)} across ${d} day${d > 1 ? 's' : ''}, about ${fmtDur(v / d)} per active day.`
-        : `${MONTHS_LONG[chartSel]} ${chartYear}: no focus time logged.`);
+      const total = cols.reduce((a, c) => a + c.mins, 0);
+      const v = cols[sel].mins;
+      if (week) {
+        const active = cols.filter(c => c.mins > 0).length;
+        set('chartTitle', 'Day by day');
+        set('chartYearLabel', `${fmtShortDate(chartWeek)} – ${fmtShortDate(addDays(chartWeek, 6))}`);
+        set('chartYearTotal', total ? `${fmtDur(total)} studied · ${active} of 7 days` : 'No focus time logged this week');
+        set('monthReadout', v ? `${cols[sel].tip}: ${fmtDur(v)} of focus.` : `${cols[sel].tip}: no focus time logged.`);
+      } else {
+        const d = monthDays[sel];
+        set('chartTitle', 'Month by month');
+        set('chartYearLabel', chartYear);
+        set('chartYearTotal', total ? `${fmtDur(total)} studied in ${chartYear}` : `No focus time logged in ${chartYear}`);
+        set('monthReadout', v
+          ? `${MONTHS_LONG[sel]} ${chartYear}: ${fmtDur(v)} across ${d} day${d > 1 ? 's' : ''}, about ${fmtDur(v / d)} per active day.`
+          : `${MONTHS_LONG[sel]} ${chartYear}: no focus time logged.`);
+      }
 
+      document.getElementById('chartTabWeek')?.classList.toggle('active', week);
+      document.getElementById('chartTabMonth')?.classList.toggle('active', !week);
       const prev = document.getElementById('yearPrev'), next = document.getElementById('yearNext');
-      if (prev) prev.disabled = chartYear <= earliestLogYear();
-      if (next) next.disabled = chartYear >= curY;
+      if (prev) prev.disabled = week ? chartWeek <= mondayOf(earliestLogDay()) : chartYear <= earliestLogYear();
+      if (next) next.disabled = week ? chartWeek >= mondayOf(now) : chartYear >= curY;
+      const pl = week ? 'week' : 'year';
+      prev?.setAttribute('aria-label', `Previous ${pl}`); next?.setAttribute('aria-label', `Next ${pl}`);
     }
 
-    function selectMonth(i) {
-      chartSel = i;
+    function setChartMode(m) {
+      if (m === chartMode) return;
+      chartMode = m;
+      try { localStorage.setItem('chartMode', m); } catch (e) {}
+      lastChartSig = '';
+      renderMonthChart(true);
+    }
+
+    function selectChartItem(i) {
+      if (chartMode === 'week') chartDaySel = i; else chartSel = i;
       lastChartSig = '';
       renderMonthChart(false);
-      document.querySelector(`#monthChart .mc-col[data-m="${i}"]`)?.focus();
+      document.querySelector(`#monthChart .mc-col[data-i="${i}"]`)?.focus();
     }
 
-    function shiftChartYear(d) {
-      const curY = new Date().getFullYear();
-      const y = Math.min(curY, Math.max(earliestLogYear(), chartYear + d));
-      if (y === chartYear) return;
-      chartYear = y;
-      const { mins } = monthData(y);
-      chartSel = y === curY ? new Date().getMonth() : mins.indexOf(Math.max(...mins));
+    function shiftChart(dir) {
+      const now = new Date();
+      if (chartMode === 'week') {
+        const curMon = mondayOf(now), minMon = mondayOf(earliestLogDay());
+        let w = addDays(chartWeek, 7 * dir);
+        if (w > curMon) w = curMon;
+        if (w < minMon) w = minMon;
+        if (dayKey(w) === dayKey(chartWeek)) return;
+        chartWeek = w;
+        const days = weekData(w);
+        chartDaySel = dayKey(w) === dayKey(curMon) ? (now.getDay() + 6) % 7 : days.map(d => d.mins).indexOf(Math.max(...days.map(d => d.mins)));
+      } else {
+        const curY = now.getFullYear();
+        const y = Math.min(curY, Math.max(earliestLogYear(), chartYear + dir));
+        if (y === chartYear) return;
+        chartYear = y;
+        const { mins } = monthData(y);
+        chartSel = y === curY ? now.getMonth() : mins.indexOf(Math.max(...mins));
+      }
       renderMonthChart(true);
+    }
+
+    // --- MOVE STUDY TIME BETWEEN DAYS ---
+    // Old versions of the app saved only two undated counters, so that history could not be placed on
+    // the right days and was dropped on the day the new version first ran. This moves minutes
+    // between days (your all-time total never changes, so it cannot be used to inflate the leaderboard).
+    const $id = id => document.getElementById(id);
+
+    function openMoveModal() {
+      const log = loadFocusLog(), today = dayKey(new Date());
+      let bestK = today, best = 0;
+      for (const [k, v] of Object.entries(log)) if (v > best) { best = v; bestK = k; }
+      $id('moveFrom').max = today; $id('moveTo').max = today;
+      $id('moveFrom').value = best > 0 ? bestK : today;
+      $id('moveTo').value = '';
+      $id('moveHours').value = ''; $id('moveMinutes').value = '';
+      updateMoveInfo();
+      $id('moveModal')?.classList.add('active');
+    }
+    function closeMoveModal() { $id('moveModal')?.classList.remove('active'); }
+
+    function updateMoveInfo() {
+      const k = $id('moveFrom').value, v = Number(loadFocusLog()[k]) || 0;
+      $id('moveFromInfo').textContent = k ? `${k} has ${fmtDur(v)} logged.` : '';
+    }
+    function moveAll() {
+      const v = Number(loadFocusLog()[$id('moveFrom').value]) || 0;
+      $id('moveHours').value = Math.floor(v / 60) || '';
+      $id('moveMinutes').value = v % 60 || '';
+    }
+
+    async function applyMove() {
+      const from = $id('moveFrom').value, to = $id('moveTo').value;
+      const mins = (Math.floor(Number($id('moveHours').value)) || 0) * 60 + (Math.floor(Number($id('moveMinutes').value)) || 0);
+      const today = dayKey(new Date());
+      const log = loadFocusLog();
+      const have = Number(log[from]) || 0;
+
+      if (!DAY_RE.test(from) || !DAY_RE.test(to)) return notify('Pick both dates', 'Choose the day to take time from and the day to move it to.', 'warn');
+      if (from === to) return notify('Pick two different days', 'The two dates are the same.', 'warn');
+      if (from > today || to > today) return notify('Dates in the future', 'You can only move time between days that have already happened.', 'warn');
+      if (mins < 1) return notify('How much time?', 'Enter the hours and/or minutes to move.', 'warn');
+      if (mins > have) return notify('Not enough time on that day', `${from} only has ${fmtDur(have)}.`, 'warn');
+
+      const newFrom = have - mins, newTo = (Number(log[to]) || 0) + mins;
+
+      // Signed in: update the cloud first, so the cloud and this device can never disagree.
+      let res = null;
+      if (typeof window.moveCloudMinutes === 'function') {
+        res = await window.moveCloudMinutes(from, to, mins);
+        if (res === false) return notify('Could not update your account', 'Nothing was changed. Check your connection, or sync and try again.', 'error');
+      }
+      // Signed out on a device that has synced before: a local-only edit would be undone by the next sync.
+      if (res === null && Object.keys(localStorage).some(k => k.startsWith('focusLogSynced_'))) {
+        return notify('Sign in first', 'This device is linked to an account. Sign in so the change reaches your backup too.', 'warn');
+      }
+      const finalFrom = res ? res.from : newFrom, finalTo = res ? res.to : newTo;
+
+      if (finalFrom > 0) log[from] = finalFrom; else delete log[from];
+      log[to] = finalTo;
+      localStorage.setItem('focusLog', JSON.stringify(log));
+      lastChartSig = '';
+      updateStatsDisplay();
+      closeMoveModal();
+      notify('Study time moved', `${fmtDur(mins)} moved from ${from} to ${to}.`, 'success');
     }
 
     setInterval(updateStatsDisplay, 60000); // rolls over at midnight / new week / new month
@@ -1635,7 +1800,7 @@ try {
     orderBy, 
     limit, 
     onSnapshot,
-    increment
+    runTransaction
   } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -1660,32 +1825,77 @@ try {
   const escHtml = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const isHttps = u => { try { return new URL(u).protocol === 'https:'; } catch (e) { return false; } };
 
-  // --- DAILY STUDY HISTORY BACKUP (powers the month-by-month chart on every device) ---
+  // --- DAILY STUDY HISTORY BACKUP (powers the charts on every device) ---
   // Stored privately in  focusLogs/{your uid}  as  { days: { "2026-09-14": 95, ... } }  (minutes per day).
-  const syncedKey = uid => `focusLogSynced_${uid}`;
+  // Every upload is a Firestore transaction tagged with a unique id that is remembered in the document,
+  // so if the page is closed mid-upload the retry can never be counted twice.
+  const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
+  const syncedKey = uid => `focusLogSynced_${uid}`;     // what the cloud already has from this device
+  const pendingKey = uid => `focusLogPending_${uid}`;   // an upload that may or may not have landed
   const readObj = k => { try { const v = JSON.parse(localStorage.getItem(k)); return v && typeof v === 'object' && !Array.isArray(v) ? v : {}; } catch (e) { return {}; } };
+  const cleanDays = d => { const out = {}; for (const [k, v] of Object.entries(d || {})) if (DAY_RE.test(k) && Number(v) > 0) out[k] = Number(v); return out; };
   const NOTE_OFF = 'Saved on this device only. Sign in to back up your stats and see them on any device.';
   const NOTE_SYNCING = '☁️ Syncing your history…';
   const NOTE_ON = '☁️ Backed up to your account. Your history follows you to any device.';
   const NOTE_ERR = '⚠️ Could not reach the cloud. Your stats are safe on this device and will upload next time.';
   const setSyncNote = t => { const el = document.getElementById('syncNote'); if (el) el.textContent = t; };
+  const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
+
+  // Upload whatever this device has studied that the cloud has not seen yet.
+  async function doFlush() {
+    if (!currentUser) return;
+    const uid = currentUser.uid, ref = doc(db, 'focusLogs', uid);
+
+    let op = readObj(pendingKey(uid));
+    if (!op.opId) {
+      const local = readObj('focusLog'), synced = readObj(syncedKey(uid));
+      const deltas = {};
+      for (const [k, v] of Object.entries(local)) {
+        if (!DAY_RE.test(k)) continue;
+        const d = Math.max(0, (Number(v) || 0) - (Number(synced[k]) || 0));
+        if (d > 0) deltas[k] = d;
+      }
+      if (!Object.keys(deltas).length) return;
+      op = { opId: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), deltas };
+      localStorage.setItem(pendingKey(uid), JSON.stringify(op)); // remember it BEFORE sending
+    }
+
+    await withTimeout(runTransaction(db, async tx => {
+      const snap = await tx.get(ref);
+      const days = { ...((snap.exists() && snap.data().days) || {}) };
+      const applied = { ...(days._applied || {}) };
+      if (applied[op.opId]) return;                       // this exact upload already landed earlier
+      for (const [k, d] of Object.entries(op.deltas)) days[k] = (Number(days[k]) || 0) + d;
+      const ids = Object.keys(applied).sort();
+      while (ids.length >= 30) delete applied[ids.shift()]; // keep the list short
+      applied[op.opId] = true;
+      days._applied = applied;
+      tx.set(ref, { days });
+    }), 15000);
+
+    const synced = readObj(syncedKey(uid));
+    for (const [k, d] of Object.entries(op.deltas)) synced[k] = (Number(synced[k]) || 0) + d;
+    localStorage.setItem(syncedKey(uid), JSON.stringify(synced));
+    localStorage.removeItem(pendingKey(uid));
+  }
+
+  // One upload at a time; resolves true/false and never throws.
+  let flushChain = Promise.resolve(true);
+  const flushFocusLog = () => (flushChain = flushChain.then(doFlush).then(() => true, e => {
+    console.error('Could not back up study history:', e.code || e.message || e);
+    return false;
+  }));
 
   async function syncFocusLog(user) {
     setSyncNote(NOTE_SYNCING);
-    const ref = doc(db, 'focusLogs', user.uid);
     try {
-      const snap = await getDoc(ref);
-      const cloud = snap.exists() ? (snap.data().days || {}) : {};
-      const { merged, deltas } = window.mergeFocusLogs(cloud, readObj('focusLog'), readObj(syncedKey(user.uid)));
+      if (!(await flushFocusLog())) throw new Error('upload failed');
+      const snap = await getDoc(doc(db, 'focusLogs', user.uid));
+      const cloud = cleanDays(snap.exists() ? snap.data().days : {});
+      const { merged } = window.mergeFocusLogs(cloud, readObj('focusLog'), readObj(syncedKey(user.uid)));
 
-      const days = Object.keys(deltas);
-      if (days.length) {
-        const inc = {};
-        days.forEach(d => { inc[d] = increment(deltas[d]); });
-        await setDoc(ref, { days: inc }, { merge: true });
-      }
       localStorage.setItem('focusLog', JSON.stringify(merged));
-      localStorage.setItem(syncedKey(user.uid), JSON.stringify(merged));
+      localStorage.setItem(syncedKey(user.uid), JSON.stringify(cloud)); // exactly what the cloud holds
 
       // the all-time total can never be lower than the sum of the daily history
       const total = Object.values(merged).reduce((a, b) => a + b, 0);
@@ -1694,24 +1904,41 @@ try {
       if (typeof window.reloadStatsFromStorage === 'function') window.reloadStatsFromStorage();
       setSyncNote(NOTE_ON);
     } catch (e) {
-      console.error('Could not sync your study history:', e.code || e);
+      console.error('Could not sync your study history:', e.code || e.message || e);
       setSyncNote(NOTE_ERR);
     }
   }
 
-  // Called after every finished session: add those minutes to today's cloud total.
-  window.pushFocusMinutes = async (day, minutes) => {
-    if (!currentUser || !minutes || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return;
-    const uid = currentUser.uid;
+  // Called after every finished session (the minutes are already in the local log).
+  window.pushFocusMinutes = () => { flushFocusLog().then(ok => setSyncNote(ok ? NOTE_ON : NOTE_ERR)); };
+
+  // "Move study time": changes the cloud first, then returns the new totals for the two days.
+  // null = signed out, false = could not do it (nothing changed), otherwise { from, to }.
+  window.moveCloudMinutes = async (from, to, mins) => {
+    if (!currentUser) return null;
+    const uid = currentUser.uid, ref = doc(db, 'focusLogs', uid);
     try {
-      await setDoc(doc(db, 'focusLogs', uid), { days: { [day]: increment(minutes) } }, { merge: true });
+      if (!(await flushFocusLog())) return false;        // get this device's own minutes into the cloud first
+      let result = null;
+      await withTimeout(runTransaction(db, async tx => {
+        const snap = await tx.get(ref);
+        const days = { ...((snap.exists() && snap.data().days) || {}) };
+        const have = Number(days[from]) || 0;
+        if (have < mins) throw new Error('changed');       // another device changed that day meanwhile
+        days[from] = have - mins;
+        days[to] = (Number(days[to]) || 0) + mins;
+        tx.set(ref, { days });
+        result = { from: days[from], to: days[to] };
+      }), 15000);
       const synced = readObj(syncedKey(uid));
-      synced[day] = (Number(synced[day]) || 0) + minutes;
+      synced[from] = result.from; synced[to] = result.to;
       localStorage.setItem(syncedKey(uid), JSON.stringify(synced));
       setSyncNote(NOTE_ON);
+      return result;
     } catch (e) {
-      console.error('Could not back up this session:', e.code || e);
-      setSyncNote(NOTE_ERR); // it will be uploaded at the next sign-in
+      console.error('Could not move study time in the cloud:', e.code || e.message || e);
+      setSyncNote(NOTE_ERR);
+      return false;
     }
   };
 
@@ -1720,6 +1947,7 @@ try {
     try {
       await setDoc(doc(db, 'focusLogs', currentUser.uid), { days: {} });
       localStorage.removeItem(syncedKey(currentUser.uid));
+      localStorage.removeItem(pendingKey(currentUser.uid));
     } catch (e) { console.error('Could not clear the cloud history:', e.code || e); }
   };
 

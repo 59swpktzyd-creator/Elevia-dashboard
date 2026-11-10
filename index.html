@@ -1406,7 +1406,7 @@ try {
     const mondayOf = d => { const m = new Date(d); m.setHours(0, 0, 0, 0); m.setDate(m.getDate() - ((m.getDay() + 6) % 7)); return m; };
     const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
     const fmtShortDate = d => `${MONTHS_SHORT[d.getMonth()]} ${d.getDate()}`;
-    const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
+    const DAY_KEY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
     let chartMode = localStorage.getItem('chartMode') === 'week' ? 'week' : 'month';
     let chartYear = new Date().getFullYear();
@@ -1435,7 +1435,7 @@ try {
 
     function earliestLogDay() {
       let best = null;
-      for (const k of Object.keys(loadFocusLog())) if (DAY_RE.test(k) && (best === null || k < best)) best = k;
+      for (const k of Object.keys(loadFocusLog())) if (DAY_KEY_RE.test(k) && (best === null || k < best)) best = k;
       return best ? new Date(Number(best.slice(0, 4)), Number(best.slice(5, 7)) - 1, Number(best.slice(8, 10))) : new Date();
     }
     const earliestLogYear = () => earliestLogDay().getFullYear();
@@ -1594,7 +1594,7 @@ try {
       const log = loadFocusLog();
       const have = Number(log[from]) || 0;
 
-      if (!DAY_RE.test(from) || !DAY_RE.test(to)) return notify('Pick both dates', 'Choose the day to take time from and the day to move it to.', 'warn');
+      if (!DAY_KEY_RE.test(from) || !DAY_KEY_RE.test(to)) return notify('Pick both dates', 'Choose the day to take time from and the day to move it to.', 'warn');
       if (from === to) return notify('Pick two different days', 'The two dates are the same.', 'warn');
       if (from > today || to > today) return notify('Dates in the future', 'You can only move time between days that have already happened.', 'warn');
       if (mins < 1) return notify('How much time?', 'Enter the hours and/or minutes to move.', 'warn');
@@ -1829,11 +1829,11 @@ try {
   // Stored privately in  focusLogs/{your uid}  as  { days: { "2026-09-14": 95, ... } }  (minutes per day).
   // Every upload is a Firestore transaction tagged with a unique id that is remembered in the document,
   // so if the page is closed mid-upload the retry can never be counted twice.
-  const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
+  const LOG_DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
   const syncedKey = uid => `focusLogSynced_${uid}`;     // what the cloud already has from this device
   const pendingKey = uid => `focusLogPending_${uid}`;   // an upload that may or may not have landed
   const readObj = k => { try { const v = JSON.parse(localStorage.getItem(k)); return v && typeof v === 'object' && !Array.isArray(v) ? v : {}; } catch (e) { return {}; } };
-  const cleanDays = d => { const out = {}; for (const [k, v] of Object.entries(d || {})) if (DAY_RE.test(k) && Number(v) > 0) out[k] = Number(v); return out; };
+  const cleanDays = d => { const out = {}; for (const [k, v] of Object.entries(d || {})) if (LOG_DAY_RE.test(k) && Number(v) > 0) out[k] = Number(v); return out; };
   const NOTE_OFF = 'Saved on this device only. Sign in to back up your stats and see them on any device.';
   const NOTE_SYNCING = '☁️ Syncing your history…';
   const NOTE_ON = '☁️ Backed up to your account. Your history follows you to any device.';
@@ -1851,7 +1851,7 @@ try {
       const local = readObj('focusLog'), synced = readObj(syncedKey(uid));
       const deltas = {};
       for (const [k, v] of Object.entries(local)) {
-        if (!DAY_RE.test(k)) continue;
+        if (!LOG_DAY_RE.test(k)) continue;
         const d = Math.max(0, (Number(v) || 0) - (Number(synced[k]) || 0));
         if (d > 0) deltas[k] = d;
       }
